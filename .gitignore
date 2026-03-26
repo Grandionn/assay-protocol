@@ -1,0 +1,16 @@
+node_modules/
+artifacts/
+cache/
+coverage/
+coverage.json
+typechain-types/
+
+.env
+.env.local
+
+# Hardhat
+*.bak
+
+# OS
+.DS_Store
+Thumbs.db
