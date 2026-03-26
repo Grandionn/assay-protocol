@@ -1,32 +1,32 @@
 // scripts/deploy.js
-// Deploys AssayStakeRegistry, AssayReputation, AssayEscrow to Base Sepolia (or Base mainnet).
-// After deployment, wires up permissions between the three contracts.
+// Deploys MockUSDC (testnet only), AssayStakeRegistry, AssayReputation, AssayEscrow.
+// Wires up permissions between the three core contracts.
+// Saves deployed addresses to deployments/<network>.json.
 //
 // Usage:
 //   npx hardhat run scripts/deploy.js --network baseSepolia
 //   npx hardhat run scripts/deploy.js --network base
 //
 // Required .env variables:
-//   PRIVATE_KEY         — deployer wallet private key (no 0x prefix)
+//   PRIVATE_KEY          — deployer wallet private key (no 0x prefix)
 //   BASE_SEPOLIA_RPC_URL — (optional, falls back to public RPC)
-//   BASESCAN_API_KEY    — (optional, for contract verification)
+//   BASESCAN_API_KEY     — (optional, for contract verification)
 
 require("dotenv").config();
-const hre = require("hardhat");
+const hre  = require("hardhat");
+const fs   = require("fs");
+const path = require("path");
 
-// ─── Network config ────────────────────────────────────────────────────────────
+// ─── Network config ─────────────────────────────────────────────────────────
+// usdc: null means deploy MockUSDC; a string means use that canonical address.
 const NETWORK_CONFIG = {
   baseSepolia: {
-    // Canonical USDC on Base Sepolia (Circle-deployed)
-    usdc: "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
-    // Minimum stake: 10 USDC (6 decimals)
-    minimumStake: 10_000_000n,
+    usdc:         null,          // will deploy MockUSDC
+    minimumStake: 10_000_000n,   // 10 USDC (6 decimals)
   },
   base: {
-    // Canonical USDC on Base mainnet
-    usdc: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-    // Minimum stake: 100 USDC (6 decimals)
-    minimumStake: 100_000_000n,
+    usdc:         "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", // canonical USDC on Base mainnet
+    minimumStake: 100_000_000n,  // 100 USDC (6 decimals)
   },
 };
 
@@ -43,8 +43,6 @@ async function main() {
   const [deployer] = await hre.ethers.getSigners();
   console.log(`\nDeploying Assay Protocol to ${network}`);
   console.log(`  Deployer : ${deployer.address}`);
-  console.log(`  USDC     : ${config.usdc}`);
-  console.log(`  Min stake: ${config.minimumStake} (${Number(config.minimumStake) / 1e6} USDC)`);
 
   const balance = await hre.ethers.provider.getBalance(deployer.address);
   console.log(`  ETH bal  : ${hre.ethers.formatEther(balance)} ETH\n`);
@@ -52,15 +50,37 @@ async function main() {
   // The treasury is the deployer for now — update via setTreasury() post-deploy
   const treasury = deployer.address;
 
-  // ── 1. Deploy AssayStakeRegistry ──────────────────────────────────────────
+  // ── 0. Deploy MockUSDC (testnet only) ────────────────────────────────────
+  let usdcAddress = config.usdc;
+
+  if (!usdcAddress) {
+    console.log("0/4  Deploying MockUSDC...");
+    const MockUSDC = await hre.ethers.getContractFactory("MockUSDC");
+    const mockUsdc = await MockUSDC.deploy();
+    await mockUsdc.waitForDeployment();
+    usdcAddress = await mockUsdc.getAddress();
+    console.log(`     ✓ MockUSDC           : ${usdcAddress}`);
+
+    // Mint 1,000,000 USDC to deployer (6 decimals → 1_000_000 * 1e6)
+    const mintAmount = 1_000_000n * 1_000_000n; // 1e12
+    const mintTx = await mockUsdc.mint(deployer.address, mintAmount);
+    await mintTx.wait();
+    console.log(`     ✓ Minted 1,000,000 USDC to ${deployer.address}\n`);
+  } else {
+    console.log(`     Using canonical USDC : ${usdcAddress}\n`);
+  }
+
+  console.log(`  Min stake: ${config.minimumStake} (${Number(config.minimumStake) / 1e6} USDC)`);
+
+  // ── 1. Deploy AssayStakeRegistry ─────────────────────────────────────────
   console.log("1/3  Deploying AssayStakeRegistry...");
   const StakeRegistry = await hre.ethers.getContractFactory("AssayStakeRegistry");
-  const stakeRegistry = await StakeRegistry.deploy(config.usdc, config.minimumStake, treasury);
+  const stakeRegistry = await StakeRegistry.deploy(usdcAddress, config.minimumStake, treasury);
   await stakeRegistry.waitForDeployment();
   const stakeRegistryAddress = await stakeRegistry.getAddress();
   console.log(`     ✓ AssayStakeRegistry : ${stakeRegistryAddress}`);
 
-  // ── 2. Deploy AssayReputation ─────────────────────────────────────────────
+  // ── 2. Deploy AssayReputation ────────────────────────────────────────────
   console.log("2/3  Deploying AssayReputation...");
   const Reputation = await hre.ethers.getContractFactory("AssayReputation");
   const reputation = await Reputation.deploy(stakeRegistryAddress);
@@ -68,11 +88,11 @@ async function main() {
   const reputationAddress = await reputation.getAddress();
   console.log(`     ✓ AssayReputation    : ${reputationAddress}`);
 
-  // ── 3. Deploy AssayEscrow ─────────────────────────────────────────────────
+  // ── 3. Deploy AssayEscrow ────────────────────────────────────────────────
   console.log("3/3  Deploying AssayEscrow...");
   const Escrow = await hre.ethers.getContractFactory("AssayEscrow");
   const escrow = await Escrow.deploy(
-    config.usdc,
+    usdcAddress,
     stakeRegistryAddress,
     reputationAddress,
     treasury
@@ -81,7 +101,7 @@ async function main() {
   const escrowAddress = await escrow.getAddress();
   console.log(`     ✓ AssayEscrow        : ${escrowAddress}`);
 
-  // ── 4. Wire permissions ───────────────────────────────────────────────────
+  // ── 4. Wire permissions ──────────────────────────────────────────────────
   console.log("\nWiring permissions...");
 
   // StakeRegistry must trust the Escrow to call slash() and recordEarnings()
@@ -94,23 +114,52 @@ async function main() {
   await authCallerTx.wait();
   console.log(`  ✓ Reputation.authorizeCaller(${escrowAddress})`);
 
-  // ── 5. Summary ────────────────────────────────────────────────────────────
+  // ── 5. Summary ───────────────────────────────────────────────────────────
   console.log("\n═══════════════════════════════════════════════════════════");
   console.log("  ASSAY PROTOCOL — DEPLOYMENT COMPLETE");
   console.log("═══════════════════════════════════════════════════════════");
   console.log(`  Network            : ${network}`);
+  if (!config.usdc) {
+    console.log(`  MockUSDC           : ${usdcAddress}`);
+  }
   console.log(`  AssayStakeRegistry : ${stakeRegistryAddress}`);
   console.log(`  AssayReputation    : ${reputationAddress}`);
   console.log(`  AssayEscrow        : ${escrowAddress}`);
   console.log(`  Treasury           : ${treasury}  ← update with setTreasury()`);
   console.log("═══════════════════════════════════════════════════════════\n");
 
-  // ── 6. Verify on Basescan (optional) ─────────────────────────────────────
+  // ── 6. Save addresses to deployments/<network>.json ──────────────────────
+  const deploymentsDir = path.join(__dirname, "..", "deployments");
+  if (!fs.existsSync(deploymentsDir)) {
+    fs.mkdirSync(deploymentsDir, { recursive: true });
+  }
+
+  const deploymentData = {
+    network,
+    deployedAt: new Date().toISOString(),
+    deployer:   deployer.address,
+    contracts: {
+      ...(config.usdc ? {} : { MockUSDC: usdcAddress }),
+      AssayStakeRegistry: stakeRegistryAddress,
+      AssayReputation:    reputationAddress,
+      AssayEscrow:        escrowAddress,
+    },
+    treasury,
+  };
+
+  const outPath = path.join(deploymentsDir, `${network}.json`);
+  fs.writeFileSync(outPath, JSON.stringify(deploymentData, null, 2));
+  console.log(`  Addresses saved to deployments/${network}.json`);
+
+  // ── 7. Verify on Basescan (optional) ─────────────────────────────────────
   if (process.env.BASESCAN_API_KEY) {
-    console.log("Verifying contracts on Basescan...");
-    await _verify(stakeRegistryAddress, [config.usdc, config.minimumStake, treasury]);
+    console.log("\nVerifying contracts on Basescan...");
+    if (!config.usdc) {
+      await _verify(usdcAddress, []);
+    }
+    await _verify(stakeRegistryAddress, [usdcAddress, config.minimumStake, treasury]);
     await _verify(reputationAddress,    [stakeRegistryAddress]);
-    await _verify(escrowAddress,        [config.usdc, stakeRegistryAddress, reputationAddress, treasury]);
+    await _verify(escrowAddress,        [usdcAddress, stakeRegistryAddress, reputationAddress, treasury]);
   } else {
     console.log("Skipping Basescan verification (BASESCAN_API_KEY not set).");
   }
