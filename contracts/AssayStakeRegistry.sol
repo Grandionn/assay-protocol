@@ -10,7 +10,7 @@ import "./interfaces/IAssayStakeRegistry.sol";
 /// @title AssayStakeRegistry
 /// @notice Agent registration with USDC stake deposits, slashing, and earnings tracking.
 ///         Authorized escrow contracts may call slash() and recordEarnings().
-///         An agent is automatically deactivated when stake falls below minimumStake.
+///         An agent's active status is computed dynamically: registered && stake >= minimumStake.
 contract AssayStakeRegistry is IAssayStakeRegistry, Ownable, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
@@ -29,9 +29,9 @@ contract AssayStakeRegistry is IAssayStakeRegistry, Ownable, ReentrancyGuard {
     struct AgentInfo {
         uint256 stake;          // current USDC stake (6 decimals)
         string  capabilityHash; // IPFS CID pointing to capability manifest
-        bool    isActive;       // false when stake < minimumStake
         uint256 earnings;       // lifetime USDC earnings recorded by Escrow
         bool    registered;     // registration flag
+        // NOTE: active status is computed dynamically: registered && stake >= minimumStake
     }
 
     mapping(address => AgentInfo) private _agents;
@@ -116,7 +116,6 @@ contract AssayStakeRegistry is IAssayStakeRegistry, Ownable, ReentrancyGuard {
         _agents[msg.sender] = AgentInfo({
             stake:          stakeAmount,
             capabilityHash: capabilityHash,
-            isActive:       true,
             earnings:       0,
             registered:     true
         });
@@ -129,11 +128,11 @@ contract AssayStakeRegistry is IAssayStakeRegistry, Ownable, ReentrancyGuard {
         if (!_agents[msg.sender].registered) revert NotRegistered();
         if (amount == 0)                     revert ZeroAmount();
 
+        bool wasActive = _agents[msg.sender].stake >= minimumStake;
         usdc.safeTransferFrom(msg.sender, address(this), amount);
         _agents[msg.sender].stake += amount;
 
-        if (!_agents[msg.sender].isActive && _agents[msg.sender].stake >= minimumStake) {
-            _agents[msg.sender].isActive = true;
+        if (!wasActive && _agents[msg.sender].stake >= minimumStake) {
             emit AgentReactivated(msg.sender);
         }
 
@@ -151,10 +150,10 @@ contract AssayStakeRegistry is IAssayStakeRegistry, Ownable, ReentrancyGuard {
         // Partial withdrawal is allowed only if remaining >= minimumStake (or full withdrawal to 0)
         if (remaining > 0 && remaining < minimumStake) revert WithdrawalWouldDeactivate();
 
+        bool wasActive = agent.stake >= minimumStake;
         agent.stake = remaining;
 
-        if (remaining < minimumStake && agent.isActive) {
-            agent.isActive = false;
+        if (wasActive && remaining < minimumStake) {
             emit AgentDeactivated(msg.sender);
         }
 
@@ -185,13 +184,13 @@ contract AssayStakeRegistry is IAssayStakeRegistry, Ownable, ReentrancyGuard {
 
         // Cap slash at available stake so we never underflow
         uint256 slashAmount = amount > info.stake ? info.stake : amount;
+        bool wasActive = info.stake >= minimumStake;
         info.stake -= slashAmount;
 
         uint256 toBuyer    = slashAmount / 2;
         uint256 toTreasury = slashAmount - toBuyer; // absorbs rounding remainder
 
-        if (info.stake < minimumStake && info.isActive) {
-            info.isActive = false;
+        if (wasActive && info.stake < minimumStake) {
             emit AgentDeactivated(agent);
         }
 
@@ -250,8 +249,11 @@ contract AssayStakeRegistry is IAssayStakeRegistry, Ownable, ReentrancyGuard {
         return _agents[agent].earnings;
     }
 
+    /// @notice Returns true if the agent is registered and has stake >= minimumStake.
+    ///         Computed dynamically so it always reflects the current minimumStake.
     function isActive(address agent) external view override returns (bool) {
-        return _agents[agent].isActive;
+        AgentInfo storage info = _agents[agent];
+        return info.registered && info.stake >= minimumStake;
     }
 
     function isAuthorizedEscrow(address escrow) external view override returns (bool) {

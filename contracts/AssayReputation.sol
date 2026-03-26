@@ -109,7 +109,8 @@ contract AssayReputation is IAssayReputation, Ownable {
             uint256 clampedQuality = qualityScore > 100    ? 100    : qualityScore;
             stats.totalSpeedScore   += clampedSpeed;
             stats.totalQualityScore += clampedQuality;
-            stats.currentStreak++;
+            // Cap at STREAK_CAP at write time to keep storage bounded
+            if (stats.currentStreak < STREAK_CAP) stats.currentStreak++;
         } else {
             // Break the streak on any failure
             stats.currentStreak = 0;

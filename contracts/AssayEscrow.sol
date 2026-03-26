@@ -95,6 +95,9 @@ contract AssayEscrow is IAssayEscrow, Ownable, ReentrancyGuard {
     event VerifierAuthorized(address indexed verifier);
     event VerifierRevoked(address indexed verifier);
     event TreasuryUpdated(address oldTreasury, address newTreasury);
+    /// @dev Emitted when a non-critical side-effect call (reputation/slash) is caught and skipped
+    ///      so that the primary USDC transfer is never blocked by a peripheral contract failure.
+    event SideEffectFailed(uint256 indexed escrowId, bytes32 indexed call);
 
     // ────────────────────────────────────────────────────────────────────────────
     // Errors
@@ -110,6 +113,8 @@ contract AssayEscrow is IAssayEscrow, Ownable, ReentrancyGuard {
     error ZeroAmount();
     error ZeroAddress();
     error AgentNotActive();
+    error SelfDeal();
+    error NotExpirable(EscrowStatus current);
 
     // ────────────────────────────────────────────────────────────────────────────
     // Constructor
@@ -147,6 +152,7 @@ contract AssayEscrow is IAssayEscrow, Ownable, ReentrancyGuard {
         uint256 deadline,
         bytes32 specHash
     ) external returns (uint256 escrowId) {
+        if (agent == msg.sender)               revert SelfDeal();
         if (amount == 0)                       revert ZeroAmount();
         if (deadline <= block.timestamp)       revert DeadlineInPast();
         if (!stakeRegistry.isActive(agent))    revert AgentNotActive();
@@ -179,6 +185,7 @@ contract AssayEscrow is IAssayEscrow, Ownable, ReentrancyGuard {
             revert InvalidStatus(escrow.status, EscrowStatus.Created);
         }
         if (block.timestamp >= escrow.deadline)   revert DeadlineInPast();
+        if (!stakeRegistry.isActive(escrow.agent)) revert AgentNotActive();
 
         escrow.status   = EscrowStatus.Funded;
         escrow.fundedAt = block.timestamp;
@@ -237,8 +244,7 @@ contract AssayEscrow is IAssayEscrow, Ownable, ReentrancyGuard {
 
         if (escrow.status != EscrowStatus.Funded &&
             escrow.status != EscrowStatus.Submitted) {
-            // Nothing to do — already settled/refunded/created-unfunded
-            revert InvalidStatus(escrow.status, EscrowStatus.Funded);
+            revert NotExpirable(escrow.status);
         }
 
         _refundAndSlash(escrowId, escrow, 0);
@@ -268,17 +274,21 @@ contract AssayEscrow is IAssayEscrow, Ownable, ReentrancyGuard {
         // Cap quality at 100
         uint256 clampedQuality = qualityScore > 100 ? 100 : qualityScore;
 
-        // Record to external contracts
-        stakeRegistry.recordEarnings(escrow.agent, agentPayment);
-        reputation.recordOutcome(
+        // Side-effect calls: wrapped in try/catch so a peripheral contract failure
+        // never blocks the primary USDC payment. SideEffectFailed is emitted on catch.
+        try stakeRegistry.recordEarnings(escrow.agent, agentPayment) {}
+        catch { emit SideEffectFailed(escrowId, "recordEarnings"); }
+
+        try reputation.recordOutcome(
             escrow.agent,
             true,
             speedScore,
             clampedQuality,
             escrow.amount
-        );
+        ) {}
+        catch { emit SideEffectFailed(escrowId, "recordOutcome"); }
 
-        // Transfer funds
+        // Transfer funds — these must succeed; no try/catch
         usdc.safeTransfer(escrow.agent,  agentPayment);
         usdc.safeTransfer(treasury,      fee);
 
@@ -290,21 +300,24 @@ contract AssayEscrow is IAssayEscrow, Ownable, ReentrancyGuard {
 
         uint256 slashAmount = (escrow.amount * SLASH_PCT) / 100;
 
-        // Record failed outcome (speed = 0, quality = 0)
-        reputation.recordOutcome(
+        // Side-effect: record failed outcome. Wrapped so a reputation bug never blocks refunds.
+        try reputation.recordOutcome(
             escrow.agent,
             false,
             0,
             qualityScore,
             escrow.amount
-        );
+        ) {}
+        catch { emit SideEffectFailed(escrowId, "recordOutcome"); }
 
-        // Refund full payment to buyer
+        // Refund full payment to buyer — must succeed; no try/catch
         usdc.safeTransfer(escrow.buyer, escrow.amount);
 
-        // Slash 10% of payment from agent's stake (50% → buyer, 50% → treasury via StakeRegistry)
+        // Side-effect: slash agent stake. Wrapped so a stake registry bug never blocks refunds.
+        // On failure the buyer still receives their full escrow refund above.
         if (slashAmount > 0) {
-            stakeRegistry.slash(escrow.agent, slashAmount, escrow.buyer);
+            try stakeRegistry.slash(escrow.agent, slashAmount, escrow.buyer) {}
+            catch { emit SideEffectFailed(escrowId, "slash"); }
         }
 
         emit EscrowRefunded(escrowId, escrow.buyer, escrow.amount, slashAmount);
