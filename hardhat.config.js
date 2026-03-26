@@ -23,6 +23,7 @@ module.exports = {
       url: process.env.BASE_SEPOLIA_RPC_URL || "https://sepolia.base.org",
       accounts: PRIVATE_KEY,
       chainId: 84532,
+      gasPrice: 10_000_000,  // 0.01 gwei — explicit, above Base Sepolia minimum ~0.006 gwei
     },
     base: {
       url: process.env.BASE_RPC_URL || "https://mainnet.base.org",

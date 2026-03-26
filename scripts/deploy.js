@@ -73,44 +73,63 @@ async function main() {
   console.log(`  Min stake: ${config.minimumStake} (${Number(config.minimumStake) / 1e6} USDC)`);
 
   // ── 1. Deploy AssayStakeRegistry ─────────────────────────────────────────
-  console.log("1/3  Deploying AssayStakeRegistry...");
-  const StakeRegistry = await hre.ethers.getContractFactory("AssayStakeRegistry");
-  const stakeRegistry = await StakeRegistry.deploy(usdcAddress, config.minimumStake, treasury);
-  await stakeRegistry.waitForDeployment();
-  const stakeRegistryAddress = await stakeRegistry.getAddress();
-  console.log(`     ✓ AssayStakeRegistry : ${stakeRegistryAddress}`);
+  let stakeRegistryAddress = config.stakeRegistry || null;
+  if (!stakeRegistryAddress) {
+    console.log("1/3  Deploying AssayStakeRegistry...");
+    const StakeRegistry = await hre.ethers.getContractFactory("AssayStakeRegistry");
+    const stakeRegistry = await StakeRegistry.deploy(usdcAddress, config.minimumStake, treasury);
+    await stakeRegistry.waitForDeployment();
+    stakeRegistryAddress = await stakeRegistry.getAddress();
+    console.log(`     ✓ AssayStakeRegistry : ${stakeRegistryAddress}`);
+  } else {
+    console.log(`     Using existing AssayStakeRegistry : ${stakeRegistryAddress}`);
+  }
 
   // ── 2. Deploy AssayReputation ────────────────────────────────────────────
-  console.log("2/3  Deploying AssayReputation...");
-  const Reputation = await hre.ethers.getContractFactory("AssayReputation");
-  const reputation = await Reputation.deploy(stakeRegistryAddress);
-  await reputation.waitForDeployment();
-  const reputationAddress = await reputation.getAddress();
-  console.log(`     ✓ AssayReputation    : ${reputationAddress}`);
+  let reputationAddress = config.reputation || null;
+  if (!reputationAddress) {
+    console.log("2/3  Deploying AssayReputation...");
+    const Reputation = await hre.ethers.getContractFactory("AssayReputation");
+    const reputation = await Reputation.deploy(stakeRegistryAddress);
+    await reputation.waitForDeployment();
+    reputationAddress = await reputation.getAddress();
+    console.log(`     ✓ AssayReputation    : ${reputationAddress}`);
+  } else {
+    console.log(`     Using existing AssayReputation : ${reputationAddress}`);
+  }
 
   // ── 3. Deploy AssayEscrow ────────────────────────────────────────────────
-  console.log("3/3  Deploying AssayEscrow...");
-  const Escrow = await hre.ethers.getContractFactory("AssayEscrow");
-  const escrow = await Escrow.deploy(
-    usdcAddress,
-    stakeRegistryAddress,
-    reputationAddress,
-    treasury
-  );
-  await escrow.waitForDeployment();
-  const escrowAddress = await escrow.getAddress();
-  console.log(`     ✓ AssayEscrow        : ${escrowAddress}`);
+  let escrowAddress = config.escrow || null;
+  if (!escrowAddress) {
+    console.log("3/3  Deploying AssayEscrow...");
+    const Escrow = await hre.ethers.getContractFactory("AssayEscrow");
+    const escrow = await Escrow.deploy(
+      usdcAddress,
+      stakeRegistryAddress,
+      reputationAddress,
+      treasury
+    );
+    await escrow.waitForDeployment();
+    escrowAddress = await escrow.getAddress();
+    console.log(`     ✓ AssayEscrow        : ${escrowAddress}`);
+  } else {
+    console.log(`     Using existing AssayEscrow : ${escrowAddress}`);
+  }
 
   // ── 4. Wire permissions ──────────────────────────────────────────────────
   console.log("\nWiring permissions...");
 
+  // Attach to contracts (handles both freshly-deployed and pre-existing)
+  const stakeRegistryContract = await hre.ethers.getContractAt("AssayStakeRegistry", stakeRegistryAddress);
+  const reputationContract    = await hre.ethers.getContractAt("AssayReputation",    reputationAddress);
+
   // StakeRegistry must trust the Escrow to call slash() and recordEarnings()
-  const authEscrowTx = await stakeRegistry.authorizeEscrow(escrowAddress);
+  const authEscrowTx = await stakeRegistryContract.authorizeEscrow(escrowAddress);
   await authEscrowTx.wait();
   console.log(`  ✓ StakeRegistry.authorizeEscrow(${escrowAddress})`);
 
   // Reputation must trust the Escrow to call recordOutcome()
-  const authCallerTx = await reputation.authorizeCaller(escrowAddress);
+  const authCallerTx = await reputationContract.authorizeCaller(escrowAddress);
   await authCallerTx.wait();
   console.log(`  ✓ Reputation.authorizeCaller(${escrowAddress})`);
 

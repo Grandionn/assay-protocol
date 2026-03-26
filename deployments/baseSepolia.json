@@ -1,0 +1,11 @@
+{
+  "network": "baseSepolia",
+  "deployedAt": "2026-03-26T13:05:51.404Z",
+  "deployer": "0x328F5a2169D803211dC24aC6576FbE2545a9b51e",
+  "contracts": {
+    "AssayStakeRegistry": "0xC0Ce47838aCF7Dfb77ae3a6161B552604Ae8aaEe",
+    "AssayReputation": "0x98D68b8b08e79F8B91b6FeE792085eb86664C182",
+    "AssayEscrow": "0x54511156abe13A2ba2224C6Ebd7DEA1989DCD2E1"
+  },
+  "treasury": "0x328F5a2169D803211dC24aC6576FbE2545a9b51e"
+}
