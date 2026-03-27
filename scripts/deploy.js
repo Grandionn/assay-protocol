@@ -133,6 +133,18 @@ async function main() {
   await authCallerTx.wait();
   console.log(`  ✓ Reputation.authorizeCaller(${escrowAddress})`);
 
+  // ── 4b. Verify wiring by reading authorization state back ────────────────
+  console.log("\nVerifying wiring...");
+
+  const escrowAuthorized  = await stakeRegistryContract.isAuthorizedEscrow(escrowAddress);
+  const callerAuthorized  = await reputationContract.isAuthorizedCaller(escrowAddress);
+
+  if (!escrowAuthorized) throw new Error("WIRING FAILED: Escrow not authorized in StakeRegistry");
+  if (!callerAuthorized)  throw new Error("WIRING FAILED: Escrow not authorized as caller in Reputation");
+
+  console.log(`  ✓ StakeRegistry.isAuthorizedEscrow(escrow) = ${escrowAuthorized}`);
+  console.log(`  ✓ Reputation.isAuthorizedCaller(escrow)    = ${callerAuthorized}`);
+
   // ── 5. Summary ───────────────────────────────────────────────────────────
   console.log("\n═══════════════════════════════════════════════════════════");
   console.log("  ASSAY PROTOCOL — DEPLOYMENT COMPLETE");
@@ -169,6 +181,40 @@ async function main() {
   const outPath = path.join(deploymentsDir, `${network}.json`);
   fs.writeFileSync(outPath, JSON.stringify(deploymentData, null, 2));
   console.log(`  Addresses saved to deployments/${network}.json`);
+
+  // ── 6b. Write DEPLOYED_ADDRESSES.md to project root ──────────────────────
+  const mdLines = [
+    `# Assay Protocol — Deployed Addresses`,
+    ``,
+    `**Network:** ${network}`,
+    `**Deployed at:** ${deploymentData.deployedAt}`,
+    `**Deployer:** \`${deployer.address}\``,
+    `**Treasury:** \`${treasury}\``,
+    ``,
+    `## Contract Addresses`,
+    ``,
+    `| Contract | Address |`,
+    `|---|---|`,
+    ...(config.usdc ? [] : [`| MockUSDC | \`${usdcAddress}\` |`]),
+    `| AssayStakeRegistry | \`${stakeRegistryAddress}\` |`,
+    `| AssayReputation | \`${reputationAddress}\` |`,
+    `| AssayEscrow | \`${escrowAddress}\` |`,
+    ``,
+    `## Wiring`,
+    ``,
+    `| Check | Result |`,
+    `|---|---|`,
+    `| StakeRegistry.isAuthorizedEscrow(AssayEscrow) | ✅ true |`,
+    `| Reputation.isAuthorizedCaller(AssayEscrow) | ✅ true |`,
+    ``,
+    `## Notes`,
+    ``,
+    `- Treasury is currently set to the deployer address. Update with \`setTreasury()\` before production use.`,
+    `- MockUSDC is for Base Sepolia testnet only; mainnet deployment uses canonical USDC at \`0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\`.`,
+  ];
+  const mdPath = path.join(__dirname, "..", "DEPLOYED_ADDRESSES.md");
+  fs.writeFileSync(mdPath, mdLines.join("\n") + "\n");
+  console.log(`  Addresses saved to DEPLOYED_ADDRESSES.md`);
 
   // ── 7. Verify on Basescan (optional) ─────────────────────────────────────
   if (process.env.BASESCAN_API_KEY) {

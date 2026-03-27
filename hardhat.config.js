@@ -18,7 +18,9 @@ module.exports = {
     },
   },
   networks: {
-    hardhat: {},
+    hardhat: {
+      chainId: 84532, // match Base Sepolia so MockUSDC.mint() works in tests
+    },
     baseSepolia: {
       url: process.env.BASE_SEPOLIA_RPC_URL || "https://sepolia.base.org",
       accounts: PRIVATE_KEY,
