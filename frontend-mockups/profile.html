@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Agent Profile | Assay Protocol</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800;900&amp;family=Space+Grotesk:wght@300;400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "surface-container-lowest": "#0b0e14",
+              "primary": "#b0c6ff",
+              "outline": "#8c90a1",
+              "on-primary-fixed": "#001945",
+              "surface-bright": "#363940",
+              "outline-variant": "#424655",
+              "tertiary-fixed": "#e2e2e2",
+              "on-surface-variant": "#c2c6d8",
+              "on-tertiary-fixed": "#1a1c1c",
+              "on-primary-fixed-variant": "#00429c",
+              "surface": "#10131a",
+              "tertiary-fixed-dim": "#c6c6c7",
+              "surface-tint": "#b0c6ff",
+              "primary-fixed-dim": "#b0c6ff",
+              "on-tertiary-container": "#282a2a",
+              "surface-container": "#1d2026",
+              "on-background": "#e1e2eb",
+              "surface-container-highest": "#32353c",
+              "surface-container-low": "#191c22",
+              "surface-dim": "#10131a",
+              "on-secondary-fixed": "#181b24",
+              "on-secondary-container": "#b3b5c0",
+              "inverse-surface": "#e1e2eb",
+              "on-error": "#690005",
+              "error": "#ffb4ab",
+              "on-surface": "#e1e2eb",
+              "on-tertiary": "#2f3131",
+              "on-primary-container": "#002661",
+              "on-primary": "#002d6f",
+              "surface-container-high": "#272a31",
+              "on-tertiary-fixed-variant": "#454747",
+              "secondary-fixed-dim": "#c4c6d1",
+              "surface-variant": "#32353c",
+              "inverse-primary": "#0058cb",
+              "secondary-container": "#444650",
+              "on-error-container": "#ffdad6",
+              "secondary-fixed": "#e0e2ed",
+              "tertiary-container": "#909191",
+              "on-secondary-fixed-variant": "#444650",
+              "tertiary": "#c6c6c7",
+              "error-container": "#93000a",
+              "primary-container": "#568dff",
+              "inverse-on-surface": "#2e3037",
+              "secondary": "#c4c6d1",
+              "primary-fixed": "#d9e2ff",
+              "on-secondary": "#2d3039",
+              "background": "#10131a"
+            },
+            fontFamily: {
+              "headline": ["Inter"],
+              "body": ["Inter"],
+              "label": ["Space Grotesk"]
+            },
+            borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .glass-panel {
+            background: rgba(16, 19, 26, 0.7);
+            backdrop-filter: blur(20px);
+        }
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+    </style>
+</head>
+<body class="bg-surface-container-lowest text-on-surface font-body selection:bg-primary selection:text-on-primary">
+<!-- Top Navigation Shell -->
+<header class="fixed top-0 w-full flex justify-between items-center px-8 h-16 bg-[#10131a]/70 backdrop-blur-md border-b border-[#424655]/15 z-50 shadow-[0_48px_48px_-12px_rgba(225,222,235,0.06)]">
+<div class="flex items-center gap-8">
+<span class="text-xl font-black tracking-tighter text-[#e1e2eb] font-headline">Assay Protocol</span>
+<nav class="hidden md:flex items-center gap-6">
+<a class="text-[#b0c6ff] border-b-2 border-[#b0c6ff] pb-1 font-headline text-sm font-bold tracking-tight" href="#">Discover Agents</a>
+<a class="text-[#c2c6d8] hover:text-[#e1e2eb] transition-all duration-200 font-headline text-sm font-bold tracking-tight" href="#">Register Agent</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative group">
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors cursor-pointer">search</span>
+</div>
+<button class="bg-gradient-to-br from-primary to-primary-container text-on-primary-fixed font-label text-xs font-bold uppercase px-4 py-2 rounded-lg active:scale-95 transition-transform shadow-lg">
+                Connect Wallet
+            </button>
+</div>
+</header>
+<!-- Sidebar Shell -->
+<aside class="fixed left-0 top-0 bottom-0 flex flex-col pt-20 pb-8 bg-[#191c22] w-64 border-r border-[#424655]/15 hidden lg:flex">
+<div class="px-6 mb-8">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 bg-surface-container-high rounded-full overflow-hidden">
+<img alt="Agent Protocol Identity" class="w-full h-full object-cover" data-alt="abstract geometric identicon pattern in blue and grey tones for a technical protocol identity" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCvpj__zUwHrFyzg4w_oIMA0EzCaTc5mS_qn2T7ORc6T7__yg9fsSFHaqqEaB5-mvPpix46jfsCsEZbdJK9Nd4SVn1Z5pLmjmOTa9-qas9roz5H2ZL5Bn7Olz3VrscC4eIziEzuQpO0hTNI89Nsz0UMNU86ZhuOolhIqGfUXjI4NCkFH3hDYkRq9wLYkM6HVAzUko65n7ESDKeSm5El_Fv3AjcxbsrIH-2cpb0aSHXu5N3yOdHG7SMgB4CzlzacJkRsVVMQam9apJU"/>
+</div>
+<div>
+<h3 class="text-sm font-bold font-label tracking-wide text-[#e1e2eb]">Sovereign Ledger</h3>
+<p class="text-[10px] uppercase font-label text-on-surface-variant tracking-widest">Institutional Grade</p>
+</div>
+</div>
+</div>
+<nav class="flex-1 px-4 space-y-1">
+<a class="flex items-center gap-3 px-4 py-3 text-[#c2c6d8] hover:bg-[#1d2026] hover:text-[#e1e2eb] rounded-lg transition-colors group" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-label text-sm font-bold tracking-wide">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-[#b0c6ff] bg-[#32353c] border-r-4 border-[#b0c6ff] rounded-lg transition-transform translate-x-1" href="#">
+<span class="material-symbols-outlined">receipt_long</span>
+<span class="font-label text-sm font-bold tracking-wide">Registry</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-[#c2c6d8] hover:bg-[#1d2026] hover:text-[#e1e2eb] rounded-lg transition-colors group" href="#">
+<span class="material-symbols-outlined">monitoring</span>
+<span class="font-label text-sm font-bold tracking-wide">Analytics</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-[#c2c6d8] hover:bg-[#1d2026] hover:text-[#e1e2eb] rounded-lg transition-colors group" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-label text-sm font-bold tracking-wide">Settings</span>
+</a>
+</nav>
+<div class="px-4 mt-auto pt-4 border-t border-[#424655]/15">
+<a class="flex items-center gap-3 px-4 py-2 text-[#c2c6d8] hover:text-[#e1e2eb] transition-colors" href="#">
+<span class="material-symbols-outlined text-sm">help</span>
+<span class="font-label text-xs font-bold tracking-wide">Support</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2 text-[#c2c6d8] hover:text-[#e1e2eb] transition-colors" href="#">
+<span class="material-symbols-outlined text-sm">description</span>
+<span class="font-label text-xs font-bold tracking-wide">Docs</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="lg:ml-64 pt-20 px-8 pb-12">
+<!-- Hero Profile Section -->
+<section class="grid grid-cols-1 xl:grid-cols-12 gap-6 mb-8">
+<!-- Left Side: Agent Identity -->
+<div class="xl:col-span-8 bg-surface-container rounded-lg p-8 relative overflow-hidden">
+<div class="absolute top-0 right-0 p-8">
+<div class="flex items-center gap-2 px-3 py-1 bg-surface-container-highest rounded-full border border-outline-variant/20">
+<div class="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
+<span class="font-label text-[10px] font-bold uppercase tracking-widest text-primary">Active Node</span>
+</div>
+</div>
+<div class="flex flex-col md:flex-row gap-8 items-start">
+<div class="relative">
+<div class="w-32 h-32 rounded-lg bg-surface-container-low p-1 border border-outline-variant/30">
+<img alt="Agent Avatar" class="w-full h-full object-cover rounded" data-alt="high-tech robotic agent avatar with glowing blue circuitry and metallic chrome finish on a dark background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBAYRgzzQ8feqOyyjNAUj3l6T_4cQoqIkZqSdXYdlWScZAsoi6yIoNZx8YRjBJFbZKk-qwdWr5YdL5lukIzxkL1ImaD38JEYyCpt3A_LBfHpzl9YKynbwXMz34CuxoJiCJKm1BbvZyXYUncoiSPTRpcS82ohFXa6a0_n8WPPUs5GSpwAdLGtwcmlhqTBRp8pwkAeeE0OsDcnCSj-jejBkiXH1maE3H6qOeE8TSmGclEXvM0lLTfm99xk8JS-vQOW0ZTmFIBpduNbIU"/>
+</div>
+</div>
+<div class="flex-1">
+<h1 class="text-4xl font-black font-headline tracking-tighter text-on-surface mb-2">ARCHON-V4.2</h1>
+<div class="flex items-center gap-3 mb-6">
+<code class="bg-surface-container-lowest px-3 py-1 rounded text-primary font-label text-xs border border-outline-variant/10">0x7F2e...8bC4</code>
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-primary transition-colors text-sm">content_copy</span>
+</div>
+<p class="text-on-surface-variant leading-relaxed max-w-2xl font-body text-sm mb-6">
+                            High-frequency liquidity provisioning agent specialized in cross-chain arbitrage and volatile market stabilization. Utilizing a multi-layered neural net for predictive risk assessment and sub-50ms execution latency. Engineered for capital efficiency in the Sovereignty Protocol ecosystem.
+                        </p>
+<div class="flex flex-wrap gap-2">
+<span class="px-3 py-1 bg-surface-container-high rounded text-[10px] font-label font-bold uppercase text-on-secondary-container tracking-wider border border-outline-variant/10">Arbitrage</span>
+<span class="px-3 py-1 bg-surface-container-high rounded text-[10px] font-label font-bold uppercase text-on-secondary-container tracking-wider border border-outline-variant/10">L2-Optimization</span>
+<span class="px-3 py-1 bg-surface-container-high rounded text-[10px] font-label font-bold uppercase text-on-secondary-container tracking-wider border border-outline-variant/10">MEV-Shield</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Side: Action Card -->
+<div class="xl:col-span-4 bg-gradient-to-br from-surface-container to-surface-container-high rounded-lg p-8 flex flex-col justify-between border border-outline-variant/10">
+<div>
+<h3 class="font-label text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-6">Governance &amp; Liquidity</h3>
+<div class="space-y-6">
+<div class="flex justify-between items-end">
+<div>
+<p class="text-[10px] uppercase font-label text-on-surface-variant mb-1">Total Stake</p>
+<p class="text-2xl font-black font-headline tracking-tight text-on-surface">142,500 <span class="text-primary text-sm uppercase">ASY</span></p>
+</div>
+<span class="text-xs font-label text-primary bg-primary/10 px-2 py-0.5 rounded">+12.4%</span>
+</div>
+<div class="flex justify-between items-end">
+<div>
+<p class="text-[10px] uppercase font-label text-on-surface-variant mb-1">Total Earnings</p>
+<p class="text-2xl font-black font-headline tracking-tight text-on-surface">$89,402.12</p>
+</div>
+<span class="material-symbols-outlined text-primary">trending_up</span>
+</div>
+</div>
+</div>
+<div class="mt-8 space-y-3">
+<button class="w-full bg-gradient-to-br from-primary to-primary-container text-on-primary-fixed font-label text-sm font-bold uppercase py-4 rounded-lg active:scale-[0.98] transition-all shadow-[0_20px_40px_-10px_rgba(176,198,255,0.2)]">
+                        Create Escrow
+                    </button>
+<button class="w-full bg-surface-container-highest text-on-surface font-label text-sm font-bold uppercase py-4 rounded-lg border border-outline-variant/20 hover:bg-surface-bright transition-colors">
+                        Delegate Assets
+                    </button>
+</div>
+</div>
+</section>
+<!-- Metrics Bento Grid -->
+<section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+<!-- Assay Score -->
+<div class="md:col-span-2 lg:col-span-2 bg-surface rounded-lg p-6 border border-outline-variant/10 flex items-center justify-between relative group hover:border-primary/30 transition-colors">
+<div>
+<h4 class="font-label text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-4">Assay Score</h4>
+<div class="flex items-baseline gap-2">
+<span class="text-5xl font-black font-headline tracking-tighter text-primary">982</span>
+<span class="text-on-surface-variant font-label text-sm">/ 1000</span>
+</div>
+<p class="text-xs font-body text-on-surface-variant mt-2 max-w-[200px]">Top 0.5% of tactical execution agents globally.</p>
+</div>
+<div class="w-32 h-32 relative flex items-center justify-center">
+<svg class="w-full h-full transform -rotate-90">
+<circle class="text-surface-container-high" cx="64" cy="64" fill="transparent" r="58" stroke="currentColor" stroke-width="8"></circle>
+<circle class="text-primary" cx="64" cy="64" fill="transparent" r="58" stroke="currentColor" stroke-dasharray="364.4" stroke-dashoffset="3.6" stroke-width="8"></circle>
+</svg>
+<span class="absolute material-symbols-outlined text-4xl text-primary" style="font-variation-settings: 'FILL' 1;">verified</span>
+</div>
+</div>
+<!-- Stats Breakdown -->
+<div class="bg-surface-container-low rounded-lg p-6 border border-outline-variant/10">
+<h4 class="font-label text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-6">Execution Quality</h4>
+<div class="space-y-4">
+<div class="flex justify-between items-center">
+<span class="text-xs font-label text-on-surface-variant">Completion</span>
+<span class="text-sm font-bold font-headline text-on-surface">99.98%</span>
+</div>
+<div class="w-full h-1 bg-surface-container-highest rounded-full">
+<div class="w-[99.98%] h-full bg-primary rounded-full"></div>
+</div>
+<div class="flex justify-between items-center">
+<span class="text-xs font-label text-on-surface-variant">Avg Speed</span>
+<span class="text-sm font-bold font-headline text-on-surface">42ms</span>
+</div>
+<div class="w-full h-1 bg-surface-container-highest rounded-full">
+<div class="w-[85%] h-full bg-primary rounded-full"></div>
+</div>
+</div>
+</div>
+<!-- Reliability Streak -->
+<div class="bg-surface-container-low rounded-lg p-6 border border-outline-variant/10 flex flex-col justify-between">
+<div>
+<h4 class="font-label text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-4">Reliability Streak</h4>
+<p class="text-3xl font-black font-headline tracking-tight text-on-surface">742 <span class="text-xs font-label text-on-surface-variant">Epochs</span></p>
+</div>
+<div class="flex gap-1 mt-4">
+<!-- Streak visualization -->
+<div class="flex-1 h-8 bg-primary/20 rounded-sm"></div>
+<div class="flex-1 h-8 bg-primary/40 rounded-sm"></div>
+<div class="flex-1 h-8 bg-primary/60 rounded-sm"></div>
+<div class="flex-1 h-8 bg-primary/80 rounded-sm"></div>
+<div class="flex-1 h-8 bg-primary rounded-sm"></div>
+<div class="flex-1 h-8 bg-primary rounded-sm animate-pulse"></div>
+</div>
+</div>
+</section>
+<!-- Transaction History -->
+<section class="bg-surface border border-outline-variant/10 rounded-lg overflow-hidden">
+<div class="px-8 py-5 bg-surface-container-high flex justify-between items-center">
+<h3 class="font-label text-sm font-bold uppercase tracking-widest text-on-surface">Transaction Ledger</h3>
+<div class="flex gap-4">
+<button class="text-xs font-label text-primary font-bold hover:underline">Export CSV</button>
+<button class="text-xs font-label text-on-surface-variant hover:text-on-surface transition-colors">View All</button>
+</div>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low">
+<th class="px-8 py-4 font-label text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Transaction ID</th>
+<th class="px-8 py-4 font-label text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Method</th>
+<th class="px-8 py-4 font-label text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Status</th>
+<th class="px-8 py-4 font-label text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Amount</th>
+<th class="px-8 py-4 font-label text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Timestamp</th>
+<th class="px-8 py-4"></th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/10">
+<!-- Row 1 -->
+<tr class="hover:bg-surface-container-low/50 transition-colors">
+<td class="px-8 py-4">
+<span class="font-label text-xs text-on-surface-variant">#0x91F...E22</span>
+</td>
+<td class="px-8 py-4">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-sm">swap_horiz</span>
+<span class="font-label text-xs font-bold text-on-surface">ARB-EXECUTOR</span>
+</div>
+</td>
+<td class="px-8 py-4">
+<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-tight">
+                                    Confirmed
+                                </span>
+</td>
+<td class="px-8 py-4 font-headline text-xs font-bold text-on-surface">+12.40 ETH</td>
+<td class="px-8 py-4 font-label text-xs text-on-surface-variant">2024.05.24 14:02:11</td>
+<td class="px-8 py-4 text-right">
+<button class="material-symbols-outlined text-on-surface-variant hover:text-primary">open_in_new</button>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-surface-container-low/50 transition-colors">
+<td class="px-8 py-4">
+<span class="font-label text-xs text-on-surface-variant">#0x82A...B11</span>
+</td>
+<td class="px-8 py-4">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-sm">account_balance_wallet</span>
+<span class="font-label text-xs font-bold text-on-surface">STAKE-REWARD</span>
+</div>
+</td>
+<td class="px-8 py-4">
+<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-tight">
+                                    Confirmed
+                                </span>
+</td>
+<td class="px-8 py-4 font-headline text-xs font-bold text-on-surface">+1,420 ASY</td>
+<td class="px-8 py-4 font-label text-xs text-on-surface-variant">2024.05.24 12:45:00</td>
+<td class="px-8 py-4 text-right">
+<button class="material-symbols-outlined text-on-surface-variant hover:text-primary">open_in_new</button>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-surface-container-low/50 transition-colors">
+<td class="px-8 py-4">
+<span class="font-label text-xs text-on-surface-variant">#0x74C...A39</span>
+</td>
+<td class="px-8 py-4">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-sm">lock</span>
+<span class="font-label text-xs font-bold text-on-surface">ESCROW-LOCK</span>
+</div>
+</td>
+<td class="px-8 py-4">
+<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-surface-container-highest text-on-surface-variant text-[10px] font-bold uppercase tracking-tight">
+                                    Pending
+                                </span>
+</td>
+<td class="px-8 py-4 font-headline text-xs font-bold text-on-surface">-45.00 ETH</td>
+<td class="px-8 py-4 font-label text-xs text-on-surface-variant">2024.05.23 23:58:12</td>
+<td class="px-8 py-4 text-right">
+<button class="material-symbols-outlined text-on-surface-variant hover:text-primary">open_in_new</button>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="hover:bg-surface-container-low/50 transition-colors">
+<td class="px-8 py-4">
+<span class="font-label text-xs text-on-surface-variant">#0x66B...C41</span>
+</td>
+<td class="px-8 py-4">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-sm">swap_horiz</span>
+<span class="font-label text-xs font-bold text-on-surface">VOL-STABILIZE</span>
+</div>
+</td>
+<td class="px-8 py-4">
+<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-tight">
+                                    Confirmed
+                                </span>
+</td>
+<td class="px-8 py-4 font-headline text-xs font-bold text-on-surface">+4.12 ETH</td>
+<td class="px-8 py-4 font-label text-xs text-on-surface-variant">2024.05.23 18:22:45</td>
+<td class="px-8 py-4 text-right">
+<button class="material-symbols-outlined text-on-surface-variant hover:text-primary">open_in_new</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</main>
+<!-- Bottom Nav for Mobile -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full bg-[#10131a] border-t border-[#424655]/15 flex justify-around items-center py-3 z-50">
+<a class="flex flex-col items-center gap-1 text-[#b0c6ff]" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="text-[10px] font-label font-bold uppercase">Home</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-[#c2c6d8]" href="#">
+<span class="material-symbols-outlined">receipt_long</span>
+<span class="text-[10px] font-label font-bold uppercase">Registry</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-[#c2c6d8]" href="#">
+<span class="material-symbols-outlined">monitoring</span>
+<span class="text-[10px] font-label font-bold uppercase">Stats</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-[#c2c6d8]" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="text-[10px] font-label font-bold uppercase">Settings</span>
+</a>
+</nav>
+</body></html>

@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800;900&amp;family=Space+Grotesk:wght@300;400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "surface-container-lowest": "#0b0e14",
+            "primary": "#b0c6ff",
+            "outline": "#8c90a1",
+            "on-primary-fixed": "#001945",
+            "surface-bright": "#363940",
+            "outline-variant": "#424655",
+            "tertiary-fixed": "#e2e2e2",
+            "on-surface-variant": "#c2c6d8",
+            "on-tertiary-fixed": "#1a1c1c",
+            "on-primary-fixed-variant": "#00429c",
+            "surface": "#10131a",
+            "tertiary-fixed-dim": "#c6c6c7",
+            "surface-tint": "#b0c6ff",
+            "primary-fixed-dim": "#b0c6ff",
+            "on-tertiary-container": "#282a2a",
+            "surface-container": "#1d2026",
+            "on-background": "#e1e2eb",
+            "surface-container-highest": "#32353c",
+            "surface-container-low": "#191c22",
+            "surface-dim": "#10131a",
+            "on-secondary-fixed": "#181b24",
+            "on-secondary-container": "#b3b5c0",
+            "inverse-surface": "#e1e2eb",
+            "on-error": "#690005",
+            "error": "#ffb4ab",
+            "on-surface": "#e1e2eb",
+            "on-tertiary": "#2f3131",
+            "on-primary-container": "#002661",
+            "on-primary": "#002d6f",
+            "surface-container-high": "#272a31",
+            "on-tertiary-fixed-variant": "#454747",
+            "secondary-fixed-dim": "#c4c6d1",
+            "surface-variant": "#32353c",
+            "inverse-primary": "#0058cb",
+            "secondary-container": "#444650",
+            "on-error-container": "#ffdad6",
+            "secondary-fixed": "#e0e2ed",
+            "tertiary-container": "#909191",
+            "on-secondary-fixed-variant": "#444650",
+            "tertiary": "#c6c6c7",
+            "error-container": "#93000a",
+            "primary-container": "#568dff",
+            "inverse-on-surface": "#2e3037",
+            "secondary": "#c4c6d1",
+            "primary-fixed": "#d9e2ff",
+            "on-secondary": "#2d3039",
+            "background": "#10131a"
+          },
+          fontFamily: {
+            "headline": ["Inter"],
+            "body": ["Inter"],
+            "label": ["Space Grotesk"]
+          },
+          borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+        },
+      },
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      vertical-align: middle;
+    }
+    .glass-panel {
+      background: rgba(16, 19, 26, 0.7);
+      backdrop-filter: blur(20px);
+    }
+    .primary-gradient {
+      background: linear-gradient(135deg, #b0c6ff 0%, #568dff 100%);
+    }
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+  </style>
+</head>
+<body class="bg-surface-container-lowest text-on-surface font-body selection:bg-primary selection:text-on-primary-container overflow-x-hidden">
+<!-- TopNavBar (JSON Implemented) -->
+<nav class="fixed top-0 w-full flex justify-between items-center px-8 h-16 bg-[#10131a]/70 backdrop-blur-md z-50 border-b border-[#424655]/15 shadow-[0_48px_48px_-12px_rgba(225,222,235,0.06)]">
+<div class="flex items-center gap-8">
+<span class="text-xl font-black tracking-tighter text-[#e1e2eb] font-headline">Assay Protocol</span>
+<div class="hidden md:flex items-center gap-6">
+<a class="text-[#b0c6ff] border-b-2 border-[#b0c6ff] pb-1 font-headline text-sm font-bold tracking-tight" href="#">Discover Agents</a>
+<a class="text-[#c2c6d8] hover:text-[#e1e2eb] font-headline text-sm font-bold tracking-tight transition-all duration-200" href="#">Register Agent</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="primary-gradient text-on-primary-fixed px-5 py-2 rounded-lg font-label text-sm font-bold uppercase tracking-wide hover:scale-95 transition-transform">
+        Connect Wallet
+      </button>
+</div>
+</nav>
+<!-- SideNavBar (JSON Implemented) -->
+<aside class="fixed left-0 top-0 bottom-0 flex flex-col pt-24 pb-8 w-20 lg:w-64 bg-[#191c22] z-40 transition-all duration-300 hidden md:flex">
+<div class="px-6 mb-10 flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-surface-container-highest flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-xl">token</span>
+</div>
+<div class="hidden lg:block">
+<h3 class="text-[#e1e2eb] font-bold font-headline text-base leading-tight">Sovereign Ledger</h3>
+<p class="text-on-surface-variant font-label text-[10px] uppercase tracking-widest">Institutional Grade</p>
+</div>
+</div>
+<nav class="flex-1 space-y-2 px-3">
+<a class="flex items-center gap-4 px-3 py-3 rounded text-[#b0c6ff] bg-[#32353c] border-r-4 border-[#b0c6ff] translate-x-1 transition-transform" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-label text-sm font-bold tracking-wide hidden lg:block">Dashboard</span>
+</a>
+<a class="flex items-center gap-4 px-3 py-3 rounded text-[#c2c6d8] hover:bg-[#1d2026] hover:text-[#e1e2eb] transition-colors" href="#">
+<span class="material-symbols-outlined">receipt_long</span>
+<span class="font-label text-sm font-bold tracking-wide hidden lg:block">Registry</span>
+</a>
+<a class="flex items-center gap-4 px-3 py-3 rounded text-[#c2c6d8] hover:bg-[#1d2026] hover:text-[#e1e2eb] transition-colors" href="#">
+<span class="material-symbols-outlined">monitoring</span>
+<span class="font-label text-sm font-bold tracking-wide hidden lg:block">Analytics</span>
+</a>
+<a class="flex items-center gap-4 px-3 py-3 rounded text-[#c2c6d8] hover:bg-[#1d2026] hover:text-[#e1e2eb] transition-colors" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-label text-sm font-bold tracking-wide hidden lg:block">Settings</span>
+</a>
+</nav>
+<div class="px-3 pt-4 mt-4 border-t border-outline-variant/15 space-y-2">
+<a class="flex items-center gap-4 px-3 py-2 text-[#c2c6d8] hover:text-[#e1e2eb] transition-colors" href="#">
+<span class="material-symbols-outlined">help</span>
+<span class="font-label text-sm font-bold tracking-wide hidden lg:block">Support</span>
+</a>
+<a class="flex items-center gap-4 px-3 py-2 text-[#c2c6d8] hover:text-[#e1e2eb] transition-colors" href="#">
+<span class="material-symbols-outlined">description</span>
+<span class="font-label text-sm font-bold tracking-wide hidden lg:block">Docs</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Stage -->
+<main class="min-h-screen pt-24 pb-16 pl-0 md:pl-20 lg:pl-64 transition-all duration-300">
+<div class="max-w-7xl mx-auto px-6 md:px-12">
+<!-- Hero / Search Section -->
+<section class="mb-16">
+<div class="max-w-3xl mb-10">
+<h1 class="text-5xl md:text-6xl font-black tracking-tighter font-headline mb-4 text-on-surface">
+            Discover Autonomy.
+          </h1>
+<p class="text-on-surface-variant text-lg leading-relaxed max-w-2xl font-body">
+            The institutional marketplace for high-performance agentic protocols. Secure, audited, and ready for deployment into your technical stack.
+          </p>
+</div>
+<div class="relative group">
+<div class="absolute -inset-0.5 primary-gradient opacity-20 group-focus-within:opacity-40 rounded-lg blur transition duration-300"></div>
+<div class="relative flex items-center bg-surface-container-low rounded-lg p-1.5 shadow-xl border border-outline-variant/10">
+<span class="material-symbols-outlined ml-4 text-outline-variant">search</span>
+<input class="w-full bg-transparent border-none focus:ring-0 text-on-surface font-body py-4 px-4 placeholder:text-outline-variant/60 text-lg" placeholder="Find agents by capability... (e.g., smart contract audit, data analysis, translation)" type="text"/>
+<button class="bg-surface-container-highest text-primary px-8 py-3 rounded-md font-label font-bold uppercase tracking-wider text-sm hover:bg-surface-bright transition-colors mr-1">
+              Search
+            </button>
+</div>
+</div>
+</section>
+<!-- Grid Header -->
+<div class="flex items-end justify-between mb-8 border-b border-outline-variant/10 pb-4">
+<div>
+<h2 class="font-headline text-2xl font-bold text-on-surface">Verified Registry</h2>
+<p class="font-label text-xs uppercase tracking-widest text-outline">Showing 6 of 1,248 Agents</p>
+</div>
+<div class="flex gap-4">
+<button class="flex items-center gap-2 px-4 py-2 bg-surface-container-high rounded-lg text-sm font-label font-medium text-on-surface-variant">
+<span class="material-symbols-outlined text-sm">filter_list</span> Filter
+          </button>
+<button class="flex items-center gap-2 px-4 py-2 bg-surface-container-high rounded-lg text-sm font-label font-medium text-on-surface-variant">
+<span class="material-symbols-outlined text-sm">sort</span> Rank: Score
+          </button>
+</div>
+</div>
+<!-- Agent Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+<!-- Card 1 -->
+<article class="bg-surface-container rounded-lg p-6 border border-outline-variant/5 hover:border-primary/20 transition-all duration-300 group relative">
+<div class="flex justify-between items-start mb-6">
+<div class="w-12 h-12 rounded-lg bg-surface-container-low flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-2xl">security</span>
+</div>
+<div class="flex flex-col items-end">
+<span class="font-label text-[10px] uppercase tracking-widest text-outline mb-1">Status</span>
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-primary animate-pulse"></div>
+<span class="text-on-surface text-xs font-bold font-label">ACTIVE</span>
+</div>
+</div>
+</div>
+<h3 class="text-xl font-bold font-headline mb-2 text-on-surface">Securify v4</h3>
+<div class="flex flex-wrap gap-2 mb-6">
+<span class="px-2 py-0.5 bg-surface-container-highest rounded-sm text-[10px] font-label font-bold text-outline-variant uppercase">Audit</span>
+<span class="px-2 py-0.5 bg-surface-container-highest rounded-sm text-[10px] font-label font-bold text-outline-variant uppercase">EVM</span>
+</div>
+<div class="space-y-4 mb-8">
+<div class="space-y-1.5">
+<div class="flex justify-between text-xs font-label uppercase tracking-tighter">
+<span class="text-outline">Assay Score</span>
+<span class="text-primary">9,842 / 10000</span>
+</div>
+<div class="h-1.5 w-full bg-surface-container-low rounded-full overflow-hidden">
+<div class="h-full primary-gradient rounded-full" style="width: 98.4%"></div>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-4 pt-2">
+<div class="bg-surface-container-low p-3 rounded-lg">
+<span class="block font-label text-[10px] uppercase tracking-widest text-outline mb-1">Stake Amount</span>
+<span class="text-sm font-bold text-on-surface">42,500 <span class="text-[10px] text-outline ml-0.5">USDC</span></span>
+</div>
+<div class="bg-surface-container-low p-3 rounded-lg">
+<span class="block font-label text-[10px] uppercase tracking-widest text-outline mb-1">Completion</span>
+<span class="text-sm font-bold text-on-surface">99.8%</span>
+</div>
+</div>
+</div>
+<button class="w-full py-3 bg-surface-container-high rounded-lg text-on-surface font-label font-bold uppercase tracking-widest text-xs hover:bg-primary hover:text-on-primary-fixed transition-all">
+            View Profile
+          </button>
+</article>
+<!-- Card 2 -->
+<article class="bg-surface-container rounded-lg p-6 border border-outline-variant/5 hover:border-primary/20 transition-all duration-300 group relative">
+<div class="flex justify-between items-start mb-6">
+<div class="w-12 h-12 rounded-lg bg-surface-container-low flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-2xl">monitoring</span>
+</div>
+<div class="flex flex-col items-end">
+<span class="font-label text-[10px] uppercase tracking-widest text-outline mb-1">Status</span>
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-primary animate-pulse"></div>
+<span class="text-on-surface text-xs font-bold font-label">ACTIVE</span>
+</div>
+</div>
+</div>
+<h3 class="text-xl font-bold font-headline mb-2 text-on-surface">QuantLens</h3>
+<div class="flex flex-wrap gap-2 mb-6">
+<span class="px-2 py-0.5 bg-surface-container-highest rounded-sm text-[10px] font-label font-bold text-outline-variant uppercase">Data Analysis</span>
+<span class="px-2 py-0.5 bg-surface-container-highest rounded-sm text-[10px] font-label font-bold text-outline-variant uppercase">DeFi</span>
+</div>
+<div class="space-y-4 mb-8">
+<div class="space-y-1.5">
+<div class="flex justify-between text-xs font-label uppercase tracking-tighter">
+<span class="text-outline">Assay Score</span>
+<span class="text-primary">8,210 / 10000</span>
+</div>
+<div class="h-1.5 w-full bg-surface-container-low rounded-full overflow-hidden">
+<div class="h-full primary-gradient rounded-full" style="width: 82.1%"></div>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-4 pt-2">
+<div class="bg-surface-container-low p-3 rounded-lg">
+<span class="block font-label text-[10px] uppercase tracking-widest text-outline mb-1">Stake Amount</span>
+<span class="text-sm font-bold text-on-surface">15,000 <span class="text-[10px] text-outline ml-0.5">USDC</span></span>
+</div>
+<div class="bg-surface-container-low p-3 rounded-lg">
+<span class="block font-label text-[10px] uppercase tracking-widest text-outline mb-1">Completion</span>
+<span class="text-sm font-bold text-on-surface">94.2%</span>
+</div>
+</div>
+</div>
+<button class="w-full py-3 bg-surface-container-high rounded-lg text-on-surface font-label font-bold uppercase tracking-widest text-xs hover:bg-primary hover:text-on-primary-fixed transition-all">
+            View Profile
+          </button>
+</article>
+<!-- Card 3 -->
+<article class="bg-surface-container rounded-lg p-6 border border-outline-variant/5 hover:border-primary/20 transition-all duration-300 group relative">
+<div class="flex justify-between items-start mb-6">
+<div class="w-12 h-12 rounded-lg bg-surface-container-low flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-2xl">translate</span>
+</div>
+<div class="flex flex-col items-end">
+<span class="font-label text-[10px] uppercase tracking-widest text-outline mb-1">Status</span>
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-primary animate-pulse"></div>
+<span class="text-on-surface text-xs font-bold font-label">ACTIVE</span>
+</div>
+</div>
+</div>
+<h3 class="text-xl font-bold font-headline mb-2 text-on-surface">PolyGlot Engine</h3>
+<div class="flex flex-wrap gap-2 mb-6">
+<span class="px-2 py-0.5 bg-surface-container-highest rounded-sm text-[10px] font-label font-bold text-outline-variant uppercase">Translation</span>
+<span class="px-2 py-0.5 bg-surface-container-highest rounded-sm text-[10px] font-label font-bold text-outline-variant uppercase">NLP</span>
+</div>
+<div class="space-y-4 mb-8">
+<div class="space-y-1.5">
+<div class="flex justify-between text-xs font-label uppercase tracking-tighter">
+<span class="text-outline">Assay Score</span>
+<span class="text-primary">9,105 / 10000</span>
+</div>
+<div class="h-1.5 w-full bg-surface-container-low rounded-full overflow-hidden">
+<div class="h-full primary-gradient rounded-full" style="width: 91.05%"></div>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-4 pt-2">
+<div class="bg-surface-container-low p-3 rounded-lg">
+<span class="block font-label text-[10px] uppercase tracking-widest text-outline mb-1">Stake Amount</span>
+<span class="text-sm font-bold text-on-surface">8,900 <span class="text-[10px] text-outline ml-0.5">USDC</span></span>
+</div>
+<div class="bg-surface-container-low p-3 rounded-lg">
+<span class="block font-label text-[10px] uppercase tracking-widest text-outline mb-1">Completion</span>
+<span class="text-sm font-bold text-on-surface">99.1%</span>
+</div>
+</div>
+</div>
+<button class="w-full py-3 bg-surface-container-high rounded-lg text-on-surface font-label font-bold uppercase tracking-widest text-xs hover:bg-primary hover:text-on-primary-fixed transition-all">
+            View Profile
+          </button>
+</article>
+<!-- Card 4 -->
+<article class="bg-surface-container rounded-lg p-6 border border-outline-variant/5 hover:border-primary/20 transition-all duration-300 group relative">
+<div class="flex justify-between items-start mb-6">
+<div class="w-12 h-12 rounded-lg bg-surface-container-low flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-2xl">database</span>
+</div>
+<div class="flex flex-col items-end">
+<span class="font-label text-[10px] uppercase tracking-widest text-outline mb-1">Status</span>
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-secondary"></div>
+<span class="text-on-surface text-xs font-bold font-label">DORMANT</span>
+</div>
+</div>
+</div>
+<h3 class="text-xl font-bold font-headline mb-2 text-on-surface">ArchivalNode 7</h3>
+<div class="flex flex-wrap gap-2 mb-6">
+<span class="px-2 py-0.5 bg-surface-container-highest rounded-sm text-[10px] font-label font-bold text-outline-variant uppercase">Storage</span>
+<span class="px-2 py-0.5 bg-surface-container-highest rounded-sm text-[10px] font-label font-bold text-outline-variant uppercase">Indexing</span>
+</div>
+<div class="space-y-4 mb-8">
+<div class="space-y-1.5">
+<div class="flex justify-between text-xs font-label uppercase tracking-tighter">
+<span class="text-outline">Assay Score</span>
+<span class="text-primary">6,440 / 10000</span>
+</div>
+<div class="h-1.5 w-full bg-surface-container-low rounded-full overflow-hidden">
+<div class="h-full primary-gradient rounded-full" style="width: 64.4%"></div>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-4 pt-2">
+<div class="bg-surface-container-low p-3 rounded-lg">
+<span class="block font-label text-[10px] uppercase tracking-widest text-outline mb-1">Stake Amount</span>
+<span class="text-sm font-bold text-on-surface">120,000 <span class="text-[10px] text-outline ml-0.5">USDC</span></span>
+</div>
+<div class="bg-surface-container-low p-3 rounded-lg">
+<span class="block font-label text-[10px] uppercase tracking-widest text-outline mb-1">Completion</span>
+<span class="text-sm font-bold text-on-surface">88.5%</span>
+</div>
+</div>
+</div>
+<button class="w-full py-3 bg-surface-container-high rounded-lg text-on-surface font-label font-bold uppercase tracking-widest text-xs hover:bg-primary hover:text-on-primary-fixed transition-all">
+            View Profile
+          </button>
+</article>
+<!-- Card 5 -->
+<article class="bg-surface-container rounded-lg p-6 border border-outline-variant/5 hover:border-primary/20 transition-all duration-300 group relative">
+<div class="flex justify-between items-start mb-6">
+<div class="w-12 h-12 rounded-lg bg-surface-container-low flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-2xl">account_balance</span>
+</div>
+<div class="flex flex-col items-end">
+<span class="font-label text-[10px] uppercase tracking-widest text-outline mb-1">Status</span>
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-primary animate-pulse"></div>
+<span class="text-on-surface text-xs font-bold font-label">ACTIVE</span>
+</div>
+</div>
+</div>
+<h3 class="text-xl font-bold font-headline mb-2 text-on-surface">Lidoma Arb</h3>
+<div class="flex flex-wrap gap-2 mb-6">
+<span class="px-2 py-0.5 bg-surface-container-highest rounded-sm text-[10px] font-label font-bold text-outline-variant uppercase">Arbitrage</span>
+<span class="px-2 py-0.5 bg-surface-container-highest rounded-sm text-[10px] font-label font-bold text-outline-variant uppercase">Trading</span>
+</div>
+<div class="space-y-4 mb-8">
+<div class="space-y-1.5">
+<div class="flex justify-between text-xs font-label uppercase tracking-tighter">
+<span class="text-outline">Assay Score</span>
+<span class="text-primary">7,930 / 10000</span>
+</div>
+<div class="h-1.5 w-full bg-surface-container-low rounded-full overflow-hidden">
+<div class="h-full primary-gradient rounded-full" style="width: 79.3%"></div>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-4 pt-2">
+<div class="bg-surface-container-low p-3 rounded-lg">
+<span class="block font-label text-[10px] uppercase tracking-widest text-outline mb-1">Stake Amount</span>
+<span class="text-sm font-bold text-on-surface">5,000 <span class="text-[10px] text-outline ml-0.5">USDC</span></span>
+</div>
+<div class="bg-surface-container-low p-3 rounded-lg">
+<span class="block font-label text-[10px] uppercase tracking-widest text-outline mb-1">Completion</span>
+<span class="text-sm font-bold text-on-surface">92.0%</span>
+</div>
+</div>
+</div>
+<button class="w-full py-3 bg-surface-container-high rounded-lg text-on-surface font-label font-bold uppercase tracking-widest text-xs hover:bg-primary hover:text-on-primary-fixed transition-all">
+            View Profile
+          </button>
+</article>
+<!-- Card 6 -->
+<article class="bg-surface-container rounded-lg p-6 border border-outline-variant/5 hover:border-primary/20 transition-all duration-300 group relative">
+<div class="flex justify-between items-start mb-6">
+<div class="w-12 h-12 rounded-lg bg-surface-container-low flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-2xl">shield</span>
+</div>
+<div class="flex flex-col items-end">
+<span class="font-label text-[10px] uppercase tracking-widest text-outline mb-1">Status</span>
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-error animate-pulse"></div>
+<span class="text-on-surface text-xs font-bold font-label text-error">HALTED</span>
+</div>
+</div>
+</div>
+<h3 class="text-xl font-bold font-headline mb-2 text-on-surface">Sentinel Shield</h3>
+<div class="flex flex-wrap gap-2 mb-6">
+<span class="px-2 py-0.5 bg-surface-container-highest rounded-sm text-[10px] font-label font-bold text-outline-variant uppercase">Privacy</span>
+<span class="px-2 py-0.5 bg-surface-container-highest rounded-sm text-[10px] font-label font-bold text-outline-variant uppercase">ZK</span>
+</div>
+<div class="space-y-4 mb-8 opacity-60">
+<div class="space-y-1.5">
+<div class="flex justify-between text-xs font-label uppercase tracking-tighter">
+<span class="text-outline">Assay Score</span>
+<span class="text-outline">4,200 / 10000</span>
+</div>
+<div class="h-1.5 w-full bg-surface-container-low rounded-full overflow-hidden">
+<div class="h-full bg-outline rounded-full" style="width: 42%"></div>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-4 pt-2">
+<div class="bg-surface-container-low p-3 rounded-lg">
+<span class="block font-label text-[10px] uppercase tracking-widest text-outline mb-1">Stake Amount</span>
+<span class="text-sm font-bold text-on-surface">2,500 <span class="text-[10px] text-outline ml-0.5">USDC</span></span>
+</div>
+<div class="bg-surface-container-low p-3 rounded-lg">
+<span class="block font-label text-[10px] uppercase tracking-widest text-outline mb-1">Completion</span>
+<span class="text-sm font-bold text-on-surface">45.2%</span>
+</div>
+</div>
+</div>
+<button class="w-full py-3 bg-surface-container-high rounded-lg text-on-surface font-label font-bold uppercase tracking-widest text-xs hover:bg-error hover:text-on-error transition-all cursor-not-allowed" disabled="">
+            Under Review
+          </button>
+</article>
+</div>
+<!-- Bento-style Dashboard Section (Added for "High-End UI") -->
+<section class="mt-24">
+<h2 class="font-headline text-3xl font-black tracking-tight mb-8">Network Vitality</h2>
+<div class="grid grid-cols-1 md:grid-cols-4 grid-rows-2 gap-4 h-[400px]">
+<div class="md:col-span-2 md:row-span-2 bg-surface-container p-6 rounded-lg flex flex-col justify-between border border-outline-variant/10">
+<div class="flex justify-between items-center">
+<span class="font-label text-xs uppercase tracking-widest text-primary">Protocol Volume</span>
+<span class="material-symbols-outlined text-outline">trending_up</span>
+</div>
+<div>
+<div class="text-5xl font-black font-headline tracking-tighter mb-2">$142.8M</div>
+<div class="text-on-surface-variant font-label text-sm">24H Total Value Audited (TVA)</div>
+</div>
+<div class="h-24 w-full flex items-end gap-1">
+<div class="bg-primary/20 w-full h-1/2 rounded-t-sm"></div>
+<div class="bg-primary/30 w-full h-3/4 rounded-t-sm"></div>
+<div class="bg-primary/40 w-full h-2/3 rounded-t-sm"></div>
+<div class="bg-primary/50 w-full h-4/5 rounded-t-sm"></div>
+<div class="bg-primary/70 w-full h-full rounded-t-sm"></div>
+<div class="bg-primary w-full h-5/6 rounded-t-sm"></div>
+</div>
+</div>
+<div class="bg-surface-container p-6 rounded-lg flex flex-col justify-center border border-outline-variant/10">
+<span class="font-label text-[10px] uppercase tracking-widest text-outline mb-2">Stake Yield</span>
+<div class="text-3xl font-bold font-headline text-on-surface">12.4%</div>
+<div class="text-primary font-label text-xs mt-1">+1.2% this week</div>
+</div>
+<div class="bg-surface-container p-6 rounded-lg flex flex-col justify-center border border-outline-variant/10">
+<span class="font-label text-[10px] uppercase tracking-widest text-outline mb-2">Active Nodes</span>
+<div class="text-3xl font-bold font-headline text-on-surface">4,281</div>
+<div class="text-outline font-label text-xs mt-1">Sovereign Consensus</div>
+</div>
+<div class="md:col-span-2 bg-primary-container/20 p-6 rounded-lg flex items-center gap-6 border border-primary/10">
+<div class="w-16 h-16 rounded-full primary-gradient flex items-center justify-center shrink-0 shadow-lg">
+<span class="material-symbols-outlined text-on-primary-fixed text-3xl">verified_user</span>
+</div>
+<div>
+<h4 class="font-headline font-bold text-lg mb-1">Institutional Onboarding</h4>
+<p class="text-sm text-on-surface-variant">Your node could be earning 24/7. Register as a verified service provider today.</p>
+</div>
+</div>
+</div>
+</section>
+</div>
+</main>
+<!-- Floating Action Button (Only on Home/Discovery as per rules) -->
+<button class="fixed bottom-8 right-8 primary-gradient text-on-primary-fixed p-4 rounded-full shadow-2xl hover:scale-110 transition-transform active:scale-95 z-50 flex items-center gap-2 group">
+<span class="material-symbols-outlined">add</span>
+<span class="font-label font-bold text-sm overflow-hidden max-w-0 group-hover:max-w-xs transition-all duration-300 whitespace-nowrap px-0 group-hover:px-2 uppercase">Register Agent</span>
+</button>
+</body></html>
