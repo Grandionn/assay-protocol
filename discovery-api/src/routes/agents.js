@@ -1,6 +1,6 @@
 // src/routes/agents.js
-// POST /agents/register  — embed capability text and upsert into vector store
-// GET  /agents/:address  — return stored agent profile + embedding dimension
+// POST /agents/register  � embed capability text and upsert into vector store
+// GET  /agents/:address  � return stored agent profile + embedding dimension
 
 const express = require('express');
 const { getEmbedding } = require('../embedder');
@@ -8,55 +8,70 @@ const store = require('../vectorStore');
 
 const router = express.Router();
 
-// ── POST /agents/register ─────────────────────────────────────────────────────
+function validationError(message) {
+  const error = new Error(message);
+  error.status = 400;
+  return error;
+}
 
-router.post('/register', async (req, res) => {
-  const { address, capability, stake, assayScore } = req.body;
+function validateRegisterPayload(payload) {
+  const { address, capability, stake, assayScore } = payload ?? {};
 
-  // ── Validation ────────────────────────────────────────────────────────────
   if (!address || typeof address !== 'string' || address.trim().length === 0) {
-    return res.status(400).json({ error: 'address is required and must be a non-empty string' });
+    throw validationError('address is required and must be a non-empty string');
   }
   if (!capability || typeof capability !== 'string' || capability.trim().length === 0) {
-    return res.status(400).json({ error: 'capability is required and must be a non-empty string' });
+    throw validationError('capability is required and must be a non-empty string');
   }
   if (typeof stake !== 'number' || !Number.isFinite(stake) || stake < 0) {
-    return res.status(400).json({ error: 'stake must be a non-negative finite number (USDC × 10⁶)' });
+    throw validationError('stake must be a non-negative finite number (USDC � 106)');
   }
-  if (typeof assayScore !== 'number' || !Number.isFinite(assayScore) ||
-      assayScore < 0 || assayScore > 10_000) {
-    return res.status(400).json({ error: 'assayScore must be a number in [0, 10000]' });
+  if (typeof assayScore !== 'number' || !Number.isFinite(assayScore) || assayScore < 0 || assayScore > 10_000) {
+    throw validationError('assayScore must be a number in [0, 10000]');
   }
 
-  // ── Embed + store ─────────────────────────────────────────────────────────
+  return {
+    address: address.trim().toLowerCase(),
+    capability: capability.trim(),
+    stake,
+    assayScore,
+  };
+}
+
+async function registerAgentRecord(payload, options = {}) {
+  const normalised = validateRegisterPayload(payload);
+  const embedding = await getEmbedding(normalised.capability);
+
+  const metadata = {
+    ...normalised,
+    registeredAt: options.registeredAt ?? new Date().toISOString(),
+  };
+
+  store.upsert(normalised.address, embedding, metadata);
+
+  return {
+    message: 'Agent registered successfully',
+    agent: metadata,
+    embeddingDim: embedding.length,
+  };
+}
+
+router.post('/register', async (req, res) => {
   try {
-    const embedding = await getEmbedding(capability.trim());
-
-    const metadata = {
-      address:      address.trim().toLowerCase(),
-      capability:   capability.trim(),
-      stake,
-      assayScore,
-      registeredAt: new Date().toISOString(),
-    };
-
-    store.upsert(address, embedding, metadata);
-
-    return res.status(201).json({
-      message:      'Agent registered successfully',
-      agent:        metadata,
-      embeddingDim: embedding.length,
-    });
+    const result = await registerAgentRecord(req.body);
+    return res.status(201).json(result);
   } catch (err) {
+    if (err.status) {
+      return res.status(err.status).json({ error: err.message });
+    }
+
     console.error('[/agents/register] embedding error:', err.message);
     return res.status(500).json({
-      error:   'Failed to generate embedding',
+      error: 'Failed to generate embedding',
       details: err.message,
     });
   }
 });
-
-// ── GET /agents/:address ──────────────────────────────────────────────────────
 
 router.get('/:address', (req, res) => {
   const entry = store.get(req.params.address);
@@ -66,9 +81,11 @@ router.get('/:address', (req, res) => {
   }
 
   return res.json({
-    agent:        entry.metadata,
+    agent: entry.metadata,
     embeddingDim: entry.embedding.length,
   });
 });
 
 module.exports = router;
+module.exports.validateRegisterPayload = validateRegisterPayload;
+module.exports.registerAgentRecord = registerAgentRecord;
