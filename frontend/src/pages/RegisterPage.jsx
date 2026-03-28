@@ -11,6 +11,7 @@ import { parseWalletError, registerAgent } from '../lib/contracts';
 import { formatUsdcCompact, truncateAddress } from '../lib/format';
 
 const INITIAL_ASSAY_SCORE = 0;
+const INDEXING_WARNING_MESSAGE = 'On-chain registration succeeded but discovery indexing failed. Visit your profile to verify.';
 
 export function RegisterPage() {
   const navigate = useNavigate();
@@ -53,6 +54,24 @@ export function RegisterPage() {
     combinedScore: 0.68,
   });
 
+  function redirectToProfile(delayMs = 2000) {
+    window.setTimeout(() => {
+      if (walletAddress) {
+        navigate(`/agent/${walletAddress}`);
+      }
+    }, delayMs);
+  }
+
+  async function attemptDiscoveryIndex({ address, name, capability, stakeMicro }) {
+    return registerIndexedAgent({
+      address,
+      name,
+      capability,
+      stake: Number(stakeMicro),
+      assayScore: INITIAL_ASSAY_SCORE,
+    });
+  }
+
   async function handleSubmit(event) {
     event.preventDefault();
 
@@ -72,7 +91,14 @@ export function RegisterPage() {
       return;
     }
 
-    if (!form.capability.trim()) {
+    const trimmedName = form.name.trim();
+    if (!trimmedName) {
+      setStatus({ tone: 'error', message: 'Agent name is required.' });
+      return;
+    }
+
+    const trimmedCapability = form.capability.trim();
+    if (!trimmedCapability) {
       setStatus({ tone: 'error', message: 'Add a capability description before registering the agent.' });
       return;
     }
@@ -83,42 +109,59 @@ export function RegisterPage() {
       return;
     }
 
-    let onChainComplete = false;
-
     try {
       setIsSubmitting(true);
 
       const result = await registerAgent({
         signer,
         agentAddress: walletAddress,
-        capability: form.capability.trim(),
+        capability: trimmedCapability,
         stakeAmount: form.stakeAmount,
         onStatus: (message) => setStatus({ tone: 'info', message }),
       });
 
-      onChainComplete = true;
       setStatus({ tone: 'info', message: 'On-chain registration confirmed. Indexing the profile into the discovery engine.' });
 
-      await registerIndexedAgent({
-        address: walletAddress,
-        name: form.name.trim(),
-        capability: form.capability.trim(),
-        stake: Number(result.stakeAmountMicro),
-        assayScore: INITIAL_ASSAY_SCORE,
-      });
-
-      setStatus({ tone: 'success', message: 'Agent registered and indexed successfully. Redirecting to the profile view.' });
-      window.setTimeout(() => navigate(`/agent/${walletAddress}`), 900);
-    } catch (submitError) {
-      if (onChainComplete) {
-        setStatus({
-          tone: 'warning',
-          message:
-            'The registry transaction succeeded, but discovery indexing failed. You can reopen this page later to retry indexing the same capability profile.',
+      try {
+        await attemptDiscoveryIndex({
+          address: walletAddress,
+          name: trimmedName,
+          capability: trimmedCapability,
+          stakeMicro: result.stakeAmountMicro,
         });
-      } else {
-        setStatus({ tone: 'error', message: parseWalletError(submitError) });
+        setStatus({ tone: 'success', message: 'Agent registered and indexed successfully. Redirecting to the profile view.' });
+      } catch {
+        setStatus({ tone: 'warning', message: INDEXING_WARNING_MESSAGE });
       }
+
+      redirectToProfile();
+    } catch (submitError) {
+      const errorMessage = parseWalletError(submitError);
+      const normalizedErrorMessage = errorMessage.toLowerCase();
+      const shouldAttemptIndex =
+        normalizedErrorMessage.includes('already registered') ||
+        normalizedErrorMessage.includes('execution reverted');
+
+      if (!shouldAttemptIndex) {
+        setStatus({ tone: 'error', message: errorMessage });
+        return;
+      }
+
+      setStatus({ tone: 'info', message: 'This wallet is already registered on-chain. Attempting to index the profile.' });
+
+      try {
+        await attemptDiscoveryIndex({
+          address: walletAddress,
+          name: trimmedName,
+          capability: trimmedCapability,
+          stakeMicro: stakeAmountMicro,
+        });
+        setStatus({ tone: 'success', message: 'Profile indexed successfully. Redirecting to the profile view.' });
+      } catch {
+        setStatus({ tone: 'warning', message: INDEXING_WARNING_MESSAGE });
+      }
+
+      redirectToProfile();
     } finally {
       setIsSubmitting(false);
     }
