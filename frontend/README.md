@@ -52,7 +52,7 @@ npm run dev
 Vite proxies `/discover` and `/agents` to `http://localhost:3000` during local development. If you want the frontend to hit a different backend, set:
 
 ```powershell
-$env:VITE_DISCOVERY_API_URL = 'http://localhost:3000'
+$env:VITE_API_URL = 'http://localhost:3000'
 ```
 
 ## Build

@@ -1,4 +1,5 @@
-const API_BASE_URL = import.meta.env.VITE_DISCOVERY_API_URL || (import.meta.env.DEV ? '' : 'http://localhost:3000');
+const configuredApiUrl = import.meta.env.VITE_API_URL?.trim();
+const API_BASE_URL = configuredApiUrl ? configuredApiUrl.replace(/\/$/, '') : '';
 
 async function parseJsonResponse(response) {
   const payload = await response.json().catch(() => ({}));
