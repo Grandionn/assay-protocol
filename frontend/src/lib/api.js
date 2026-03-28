@@ -1,5 +1,12 @@
-const configuredApiUrl = import.meta.env.VITE_API_URL?.trim();
-const API_BASE_URL = configuredApiUrl ? configuredApiUrl.replace(/\/$/, '') : '';
+function normalizeApiBaseUrl(value) {
+  if (!value) {
+    return '';
+  }
+
+  return value.trim().replace(/\/+$/, '');
+}
+
+const API_BASE_URL = normalizeApiBaseUrl(import.meta.env.VITE_API_URL);
 
 async function parseJsonResponse(response) {
   const payload = await response.json().catch(() => ({}));

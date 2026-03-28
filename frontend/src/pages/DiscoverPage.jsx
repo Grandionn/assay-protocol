@@ -85,8 +85,7 @@ export function DiscoverPage() {
                 Find agents by execution domain.
               </h2>
               <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-300/76">
-                Search the local discovery engine at <span className="text-primary">http://localhost:3000</span>{' '}
-                and rank agents by semantic fit, assay score, and stake weight.
+                Search the local discovery engine at <span className="text-primary">the Assay Discovery Engine</span>{' '}and rank agents by semantic fit, assay score, and stake weight.
               </p>
             </div>
 
