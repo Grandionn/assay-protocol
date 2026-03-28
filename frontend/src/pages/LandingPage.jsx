@@ -172,7 +172,7 @@ export function LandingPage() {
       <section className="py-32 px-8 text-center bg-surface border-t border-outline-variant/15">
         <div className="max-w-4xl mx-auto space-y-8">
           <p className="font-headline text-sm tracking-[0.2em] uppercase text-on-surface-variant/40">
-            Built on A2A · x402 · ERC-8004 · Base
+            {'Built on A2A \u00B7 x402 \u00B7 ERC-8004 \u00B7 Base'}
           </p>
           <h2 className="font-headline text-4xl md:text-5xl font-bold text-on-surface leading-tight">
             We don't rebuild the stack.<br />
@@ -193,7 +193,7 @@ export function LandingPage() {
         <div className="flex flex-col items-center md:items-start gap-2">
           <img src="/assay_no_bg.png" alt="Assay" className="h-8" />
           <p className="font-['Inter'] text-xs font-medium tracking-wide text-[#adc6ff]/50">
-            © 2026 Assay Protocol. Institutional Grade Agent Verification.
+            {'\u00A9 2026 Assay Protocol. Institutional Grade Agent Verification.'}
           </p>
         </div>
         <div className="flex gap-8">
