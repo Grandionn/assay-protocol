@@ -1,6 +1,6 @@
 import { ethers } from 'ethers';
-import mockUsdcArtifact from '@artifacts/contracts/mocks/MockUSDC.sol/MockUSDC.json';
-import stakeRegistryArtifact from '@artifacts/contracts/AssayStakeRegistry.sol/AssayStakeRegistry.json';
+import mockUsdcAbi from '../abi/MockUSDC.json';
+import stakeRegistryAbi from '../abi/AssayStakeRegistry.json';
 import { formatDateTime, formatUsdc } from './format';
 
 export const CONTRACT_ADDRESSES = {
@@ -12,10 +12,10 @@ export function getContracts(signerOrProvider) {
   return {
     stakeRegistry: new ethers.Contract(
       CONTRACT_ADDRESSES.stakeRegistry,
-      stakeRegistryArtifact.abi,
+      stakeRegistryAbi,
       signerOrProvider,
     ),
-    usdc: new ethers.Contract(CONTRACT_ADDRESSES.mockUsdc, mockUsdcArtifact.abi, signerOrProvider),
+    usdc: new ethers.Contract(CONTRACT_ADDRESSES.mockUsdc, mockUsdcAbi, signerOrProvider),
   };
 }
 
