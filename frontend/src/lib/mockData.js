@@ -31,22 +31,3 @@ const featuredAgents = [
 ];
 
 export const fallbackDiscoverAgents = featuredAgents.map((agent) => hydrateAgent(agent));
-
-export const networkVitalityStats = [
-  {
-    label: 'Protocol Volume',
-    value: '$142.8M',
-    detail: '24H total value audited',
-    bars: ['52%', '74%', '66%', '85%', '100%', '89%'],
-  },
-  {
-    label: 'Stake Yield',
-    value: '12.4%',
-    detail: '+1.2% this week',
-  },
-  {
-    label: 'Active Nodes',
-    value: '4,281',
-    detail: 'Sovereign consensus online',
-  },
-];

@@ -24,15 +24,9 @@ export function Sidebar() {
   return (
     <aside className="fixed bottom-0 left-0 top-[72px] hidden w-20 border-r border-white/5 bg-surface/88 px-3 py-6 backdrop-blur-xl md:flex xl:w-72 xl:px-5">
       <div className="flex h-full w-full flex-col">
-        <div className="mb-10 hidden items-center gap-3 rounded-2xl border border-primary/10 bg-primary/8 px-4 py-4 xl:flex">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/5 shadow-glow">
-            <div className="h-5 w-5 rounded-full bg-electric-blue bg-cover" />
-          </div>
-          <div>
-            <div className="font-display text-base font-bold tracking-[-0.06em] text-text">Sovereign Ledger</div>
-            <div className="text-[10px] font-semibold uppercase tracking-[0.32em] text-muted">
-              Institutional Grade
-            </div>
+        <div className="mb-10 hidden xl:flex">
+          <div className="rounded-2xl border border-primary/10 bg-primary/8 px-4 py-4">
+            <img src="/assay_no_bg.png" alt="Assay" className="h-6" />
           </div>
         </div>
 

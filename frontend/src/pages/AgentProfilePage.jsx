@@ -114,6 +114,7 @@ export function AgentProfilePage() {
   const completionRateLabel = agent.completionRate == null ? 'No transactions yet' : formatPercent(agent.completionRate);
   const avgSpeedLabel = agent.avgSpeedMs == null ? 'No transactions yet' : `${agent.avgSpeedMs} ms`;
   const avgSpeedWidth = agent.avgSpeedMs == null ? 0 : Math.max(24, 100 - agent.avgSpeedMs / 2);
+  const hasReliabilityStreak = agent.reliabilityStreak != null && agent.reliabilityStreak > 0;
 
   return (
     <div className="space-y-8">
@@ -251,18 +252,28 @@ export function AgentProfilePage() {
             <div className="text-xs font-semibold uppercase tracking-[0.32em] text-muted">Reliability Streak</div>
           </div>
           <div className="font-display text-4xl font-bold tracking-[-0.08em] text-text">
-            {agent.reliabilityStreak}
-            <span className="ml-2 text-sm font-semibold uppercase tracking-[0.28em] text-muted">epochs</span>
+            {hasReliabilityStreak ? (
+              <>
+                {agent.reliabilityStreak}
+                <span className="ml-2 text-sm font-semibold uppercase tracking-[0.28em] text-muted">epochs</span>
+              </>
+            ) : (
+              'N/A'
+            )}
           </div>
-          <div className="mt-5 flex gap-2">
-            {Array.from({ length: 6 }).map((_, index) => (
-              <div
-                key={index}
-                className="h-8 flex-1 rounded-xl bg-electric-blue"
-                style={{ opacity: 0.22 + index * 0.12 }}
-              />
-            ))}
-          </div>
+          {hasReliabilityStreak ? (
+            <div className="mt-5 flex gap-2">
+              {Array.from({ length: 6 }).map((_, index) => (
+                <div
+                  key={index}
+                  className="h-8 flex-1 rounded-xl bg-electric-blue"
+                  style={{ opacity: 0.22 + index * 0.12 }}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="mt-5 text-sm leading-7 text-slate-400">Appears after verified transactions.</div>
+          )}
         </article>
       </section>
 

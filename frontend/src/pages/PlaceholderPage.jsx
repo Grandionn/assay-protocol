@@ -17,7 +17,7 @@ export function PlaceholderPage({ eyebrow, title, description }) {
           <div className="rounded-3xl border border-primary/12 bg-primary/8 p-6">
             <div className="text-xs font-semibold uppercase tracking-[0.32em] text-primary">Next actionable route</div>
             <Link
-              to="/"
+              to="/discover"
               className="mt-4 inline-flex rounded-xl border border-primary/20 px-4 py-3 text-sm font-semibold text-text transition hover:border-primary/40 hover:bg-primary/8"
             >
               Return to Discover
@@ -28,3 +28,4 @@ export function PlaceholderPage({ eyebrow, title, description }) {
     </div>
   );
 }
+
