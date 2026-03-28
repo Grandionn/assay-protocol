@@ -24,11 +24,6 @@ export function Sidebar() {
   return (
     <aside className="fixed bottom-0 left-0 top-[72px] hidden w-20 border-r border-white/5 bg-surface/88 px-3 py-6 backdrop-blur-xl md:flex xl:w-72 xl:px-5">
       <div className="flex h-full w-full flex-col">
-        <div className="mb-10 hidden xl:flex">
-          <div className="rounded-2xl border border-primary/10 bg-primary/8 px-4 py-4">
-            <img src="/assay_no_bg.png" alt="Assay" className="h-6" />
-          </div>
-        </div>
 
         <nav className="space-y-2">
           {primaryItems.map((item) => {
