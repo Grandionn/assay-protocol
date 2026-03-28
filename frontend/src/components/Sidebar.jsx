@@ -9,7 +9,7 @@ import {
 import { NavLink } from 'react-router-dom';
 
 const primaryItems = [
-  { label: 'Dashboard', to: '/', icon: LayoutGrid },
+  { label: 'Dashboard', to: '/discover', icon: LayoutGrid },
   { label: 'Registry', to: '/register', icon: ReceiptText },
   { label: 'Analytics', to: '/analytics', icon: LineChart },
   { label: 'Settings', to: '/settings', icon: Settings },

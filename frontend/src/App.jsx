@@ -3,6 +3,7 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import { AppShell } from './components/AppShell';
 import { LoadingState } from './components/LoadingState';
 
+const LandingPage = lazy(() => import('./pages/LandingPage').then((module) => ({ default: module.LandingPage })));
 const DiscoverPage = lazy(() => import('./pages/DiscoverPage').then((module) => ({ default: module.DiscoverPage })));
 const AgentProfilePage = lazy(() =>
   import('./pages/AgentProfilePage').then((module) => ({ default: module.AgentProfilePage }))
@@ -17,7 +18,8 @@ function App() {
     <Suspense fallback={<LoadingState label="Loading Route" />}>
       <Routes>
         <Route element={<AppShell />}>
-          <Route index element={<DiscoverPage />} />
+          <Route index element={<LandingPage />} />
+          <Route path="/discover" element={<DiscoverPage />} />
           <Route path="/agent/:address" element={<AgentProfilePage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route
