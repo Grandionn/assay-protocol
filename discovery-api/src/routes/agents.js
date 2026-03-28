@@ -15,7 +15,7 @@ function validationError(message) {
 }
 
 function validateRegisterPayload(payload) {
-  const { address, capability, stake, assayScore } = payload ?? {};
+  const { address, capability, stake, assayScore, name } = payload ?? {};
 
   if (!address || typeof address !== 'string' || address.trim().length === 0) {
     throw validationError('address is required and must be a non-empty string');
@@ -29,12 +29,21 @@ function validateRegisterPayload(payload) {
   if (typeof assayScore !== 'number' || !Number.isFinite(assayScore) || assayScore < 0 || assayScore > 10_000) {
     throw validationError('assayScore must be a number in [0, 10000]');
   }
+  if (name != null && typeof name !== 'string') {
+    throw validationError('name must be a string when provided');
+  }
+
+  const trimmedName = typeof name === 'string' ? name.trim() : undefined;
+  if (trimmedName && trimmedName.length > 64) {
+    throw validationError('name must be 64 characters or fewer');
+  }
 
   return {
     address: address.trim().toLowerCase(),
     capability: capability.trim(),
     stake,
     assayScore,
+    ...(trimmedName ? { name: trimmedName } : {}),
   };
 }
 

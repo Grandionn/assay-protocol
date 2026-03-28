@@ -31,6 +31,7 @@ function resolveIcon(tags) {
 export function AgentCard({ agent }) {
   const Icon = resolveIcon(agent.tags);
   const scorePercent = Math.max(0, Math.min(agent.assayScore / 10000, 1)) * 100;
+  const completionRateLabel = agent.completionRate == null ? 'N/A' : formatPercent(agent.completionRate);
 
   return (
     <article className="panel group flex h-full flex-col rounded-3xl p-6 transition duration-300 hover:-translate-y-1 hover:border-primary/22">
@@ -85,7 +86,7 @@ export function AgentCard({ agent }) {
           </div>
           <div className="rounded-2xl border border-white/5 bg-white/3 p-4">
             <div className="text-[10px] font-semibold uppercase tracking-[0.28em] text-muted">Completion Rate</div>
-            <div className="mt-2 text-lg font-bold text-text">{formatPercent(agent.completionRate)}</div>
+            <div className="mt-2 text-lg font-bold text-text">{completionRateLabel}</div>
           </div>
         </div>
       </div>

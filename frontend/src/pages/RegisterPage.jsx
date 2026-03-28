@@ -27,6 +27,7 @@ export function RegisterPage() {
 
   const [form, setForm] = useState({
     address: '',
+    name: '',
     capability: '',
     stakeAmount: '500',
   });
@@ -42,6 +43,7 @@ export function RegisterPage() {
   const stakeAmountMicro = safeParseUnits(form.stakeAmount);
   const previewAgent = hydrateAgent({
     address: form.address || walletAddress || '0x0000000000000000000000000000000000000000',
+    name: form.name.trim(),
     capability:
       form.capability ||
       'Awaiting capability definitions. Submit the form to populate intelligence parameters and operating profile.',
@@ -53,6 +55,10 @@ export function RegisterPage() {
 
   async function handleSubmit(event) {
     event.preventDefault();
+
+    if (isSubmitting) {
+      return;
+    }
 
     if (!walletAddress || !signer) {
       await connectWallet();
@@ -81,13 +87,13 @@ export function RegisterPage() {
 
     try {
       setIsSubmitting(true);
-      setStatus({ tone: 'info', message: 'Approving Mock USDC allowance if required, then submitting the registry transaction.' });
 
       const result = await registerAgent({
         signer,
         agentAddress: walletAddress,
         capability: form.capability.trim(),
         stakeAmount: form.stakeAmount,
+        onStatus: (message) => setStatus({ tone: 'info', message }),
       });
 
       onChainComplete = true;
@@ -95,6 +101,7 @@ export function RegisterPage() {
 
       await registerIndexedAgent({
         address: walletAddress,
+        name: form.name.trim(),
         capability: form.capability.trim(),
         stake: Number(result.stakeAmountMicro),
         assayScore: INITIAL_ASSAY_SCORE,
@@ -157,6 +164,19 @@ export function RegisterPage() {
                   ? `Connected wallet detected: ${truncateAddress(walletAddress, 8, 6)}`
                   : 'This field auto-fills after connecting MetaMask.'}
               </p>
+            </div>
+
+            <div>
+              <label className="mb-3 block text-xs font-semibold uppercase tracking-[0.3em] text-muted">
+                AGENT NAME
+              </label>
+              <input
+                value={form.name}
+                onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
+                maxLength={64}
+                placeholder="e.g. Securify, QuantLens, YieldScope..."
+                className="w-full rounded-3xl border border-white/8 bg-background/70 px-4 py-4 outline-none transition placeholder:text-muted/55 focus:border-primary/35"
+              />
             </div>
 
             <div>

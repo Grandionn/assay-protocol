@@ -111,6 +111,10 @@ export function AgentProfilePage() {
     );
   }
 
+  const completionRateLabel = agent.completionRate == null ? 'No transactions yet' : formatPercent(agent.completionRate);
+  const avgSpeedLabel = agent.avgSpeedMs == null ? 'No transactions yet' : `${agent.avgSpeedMs} ms`;
+  const avgSpeedWidth = agent.avgSpeedMs == null ? 0 : Math.max(24, 100 - agent.avgSpeedMs / 2);
+
   return (
     <div className="space-y-8">
       <SectionHeader
@@ -223,7 +227,7 @@ export function AgentProfilePage() {
                 {agent.assayScore.toLocaleString()}
               </div>
               <div className="mt-3 max-w-xs text-sm leading-7 text-slate-300/74">
-                Provisional score used for discovery ranking until richer reputation data is wired into the frontend.
+                Displayed directly from indexed discovery data when available.
               </div>
             </div>
             <AssayScoreRing value={agent.assayScore} />
@@ -236,12 +240,8 @@ export function AgentProfilePage() {
             <div className="text-xs font-semibold uppercase tracking-[0.32em] text-muted">Execution Quality</div>
           </div>
           <div className="space-y-5">
-            <MetricBar label="Completion Rate" value={formatPercent(agent.completionRate)} width={agent.completionRate} />
-            <MetricBar
-              label="Avg Speed"
-              value={`${agent.avgSpeedMs} ms`}
-              width={Math.max(24, 100 - agent.avgSpeedMs / 2)}
-            />
+            <MetricBar label="Completion Rate" value={completionRateLabel} width={agent.completionRate ?? 0} />
+            <MetricBar label="Avg Speed" value={avgSpeedLabel} width={avgSpeedWidth} />
           </div>
         </article>
 
@@ -268,8 +268,8 @@ export function AgentProfilePage() {
 
       <section className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
         <SummaryCard icon={Wallet} label="Registry Address" value={truncateAddress(agent.address, 8, 6)} helper="Connected wallet identity" />
-        <SummaryCard icon={Gauge} label="Avg Speed" value={`${agent.avgSpeedMs} ms`} helper="Derived execution latency proxy" />
-        <SummaryCard icon={Clock3} label="Completion Rate" value={formatPercent(agent.completionRate)} helper="Success estimate for MVP" />
+        <SummaryCard icon={Gauge} label="Avg Speed" value={avgSpeedLabel} helper="Execution timing appears after completed activity" />
+        <SummaryCard icon={Clock3} label="Completion Rate" value={completionRateLabel} helper="Visible once the agent has transaction history" />
         <SummaryCard icon={Coins} label="Stake Weight" value={formatUsdc(agent.stake)} helper="Protocol collateral depth" />
       </section>
 

@@ -40,16 +40,18 @@ export async function fetchOnChainAgent(provider, address) {
   };
 }
 
-export async function registerAgent({ signer, agentAddress, capability, stakeAmount }) {
+export async function registerAgent({ signer, agentAddress, capability, stakeAmount, onStatus }) {
   const { stakeRegistry, usdc } = getContracts(signer);
   const stakeAmountMicro = ethers.parseUnits(stakeAmount, 6);
   const allowance = await usdc.allowance(agentAddress, CONTRACT_ADDRESSES.stakeRegistry);
 
   if (allowance < stakeAmountMicro) {
+    onStatus?.('Step 1/2: Approving USDC allowance...');
     const approvalTx = await usdc.approve(CONTRACT_ADDRESSES.stakeRegistry, stakeAmountMicro);
     await approvalTx.wait();
   }
 
+  onStatus?.('Step 2/2: Submitting registration transaction...');
   const registerTx = await stakeRegistry.registerAgent(capability, stakeAmountMicro);
   const receipt = await registerTx.wait();
 
