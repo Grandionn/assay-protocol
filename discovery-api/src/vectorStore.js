@@ -1,5 +1,5 @@
-const fs = require('fs');
-const path = require('path');
+const { connectDB } = require('./db');
+const Agent = require('./models/Agent');
 
 const SEMANTIC_WEIGHT = 0.60;
 const SCORE_WEIGHT = 0.25;
@@ -8,10 +8,8 @@ const STAKE_WEIGHT = 0.15;
 const MAX_ASSAY_SCORE = 10_000;
 const STAKE_REF = 1_000 * 1_000_000;
 
-const DATA_DIR = path.join(__dirname, '..', 'data');
-const DATA_FILE = path.join(DATA_DIR, 'agents.json');
-
 const _store = new Map();
+let _mongoReady = null;
 
 function _dot(a, b) {
   let sum = 0;
@@ -42,52 +40,84 @@ function _round4(value) {
   return Math.round(value * 10_000) / 10_000;
 }
 
-function save() {
-  try {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
-    const payload = Object.fromEntries(
-      Array.from(_store.entries()).map(([address, entry]) => [address, entry]),
-    );
-    fs.writeFileSync(DATA_FILE, JSON.stringify(payload, null, 2));
-  } catch (error) {
-    console.warn('[vectorStore] Failed to persist agents:', error.message);
+async function ensureMongoReady() {
+  if (_mongoReady !== null) {
+    return _mongoReady;
   }
+
+  _mongoReady = await connectDB();
+  return _mongoReady;
 }
 
-function load() {
+async function load() {
   _store.clear();
 
-  if (!fs.existsSync(DATA_FILE)) {
+  const mongoReady = await ensureMongoReady();
+  if (!mongoReady) {
     return;
   }
 
   try {
-    const raw = fs.readFileSync(DATA_FILE, 'utf8');
-    const parsed = JSON.parse(raw);
+    const agents = await Agent.find({}).lean();
 
-    for (const [address, entry] of Object.entries(parsed ?? {})) {
-      if (!entry || !Array.isArray(entry.embedding) || typeof entry.metadata !== 'object' || entry.metadata == null) {
+    for (const agent of agents) {
+      if (!agent || !Array.isArray(agent.embedding)) {
         continue;
       }
 
-      _store.set(address.toLowerCase(), {
-        embedding: entry.embedding,
-        metadata: entry.metadata,
+      const { embedding, ...metadata } = agent;
+      _store.set(agent.address.toLowerCase(), {
+        embedding,
+        metadata,
       });
     }
   } catch (error) {
     _store.clear();
-    console.warn('[vectorStore] Failed to load persisted agents, starting empty:', error.message);
+    console.warn('[vectorStore] Failed to hydrate agents from MongoDB, starting empty:', error.message);
   }
 }
 
-function upsert(address, embedding, metadata) {
+async function upsert(address, embedding, metadata) {
   _store.set(address.toLowerCase(), { embedding, metadata });
-  save();
+
+  const mongoReady = await ensureMongoReady();
+  if (!mongoReady) {
+    return;
+  }
+
+  await Agent.findOneAndUpdate(
+    { address: address.toLowerCase() },
+    {
+      ...metadata,
+      address: address.toLowerCase(),
+      embedding,
+    },
+    { upsert: true, new: true },
+  );
 }
 
-function get(address) {
-  return _store.get(address.toLowerCase()) ?? null;
+async function get(address) {
+  const normalizedAddress = address.toLowerCase();
+  const cached = _store.get(normalizedAddress);
+
+  if (cached) {
+    return cached;
+  }
+
+  const mongoReady = await ensureMongoReady();
+  if (!mongoReady) {
+    return null;
+  }
+
+  const agent = await Agent.findOne({ address: normalizedAddress }).lean();
+  if (!agent || !Array.isArray(agent.embedding)) {
+    return null;
+  }
+
+  const { embedding, ...metadata } = agent;
+  const entry = { embedding, metadata };
+  _store.set(normalizedAddress, entry);
+  return entry;
 }
 
 function list() {
@@ -138,9 +168,15 @@ function size() {
   return _store.size;
 }
 
-function clear() {
+async function clear() {
   _store.clear();
-  save();
+
+  const mongoReady = await ensureMongoReady();
+  if (!mongoReady) {
+    return;
+  }
+
+  await Agent.deleteMany({});
 }
 
 module.exports = {
@@ -151,8 +187,5 @@ module.exports = {
   size,
   clear,
   load,
-  save,
-  DATA_DIR,
-  DATA_FILE,
   WEIGHTS: { SEMANTIC_WEIGHT, SCORE_WEIGHT, STAKE_WEIGHT },
 };

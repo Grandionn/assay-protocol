@@ -98,13 +98,13 @@ async function discover(query, opts = {}) {
 
 // ── Setup / teardown ──────────────────────────────────────────────────────────
 
-beforeEach(() => {
-  store.clear();
+beforeEach(async () => {
+  await store.clear();
   getEmbedding.mockClear();
 });
 
-afterEach(() => {
-  store.clear();
+afterEach(async () => {
+  await store.clear();
 });
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -386,7 +386,7 @@ describe('POST /discover', () => {
       // so similarity is identical for every agent → ranking by score+stake only
       getEmbedding.mockResolvedValue(Array.from({ length: 384 }, (_, i) => (i === 0 ? 1 : 0)));
 
-      store.clear();
+      await store.clear();
       await register(AGENT_HIGH);
       await register(AGENT_LOW);
 
@@ -503,40 +503,40 @@ describe('vectorStore', () => {
     return v;
   };
 
-  it('upsert + get round-trip', () => {
-    store.upsert('0xABC', mkVec(0), { address: '0xabc', capability: 'test', stake: 100, assayScore: 5000, registeredAt: '' });
-    const entry = store.get('0xABC'); // case-insensitive
+  it('upsert + get round-trip', async () => {
+    await store.upsert('0xABC', mkVec(0), { address: '0xabc', capability: 'test', stake: 100, assayScore: 5000, registeredAt: '' });
+    const entry = await store.get('0xABC'); // case-insensitive
     expect(entry).not.toBeNull();
     expect(entry.metadata.capability).toBe('test');
   });
 
-  it('get returns null for unknown address', () => {
-    expect(store.get('0xUNKNOWN')).toBeNull();
+  it('get returns null for unknown address', async () => {
+    await expect(store.get('0xUNKNOWN')).resolves.toBeNull();
   });
 
-  it('list returns metadata for every registered entry', () => {
-    store.upsert('0xA1', mkVec(0), { address: '0xa1', capability: 'c1', stake: 100, assayScore: 5000, registeredAt: '' });
-    store.upsert('0xA2', mkVec(1), { address: '0xa2', capability: 'c2', stake: 200, assayScore: 6000, registeredAt: '' });
+  it('list returns metadata for every registered entry', async () => {
+    await store.upsert('0xA1', mkVec(0), { address: '0xa1', capability: 'c1', stake: 100, assayScore: 5000, registeredAt: '' });
+    await store.upsert('0xA2', mkVec(1), { address: '0xa2', capability: 'c2', stake: 200, assayScore: 6000, registeredAt: '' });
     expect(store.list()).toHaveLength(2);
   });
 
-  it('size() reflects current entry count', () => {
+  it('size() reflects current entry count', async () => {
     expect(store.size()).toBe(0);
-    store.upsert('0xA1', mkVec(0), { address: '0xa1', capability: 'c1', stake: 100, assayScore: 5000, registeredAt: '' });
+    await store.upsert('0xA1', mkVec(0), { address: '0xa1', capability: 'c1', stake: 100, assayScore: 5000, registeredAt: '' });
     expect(store.size()).toBe(1);
   });
 
-  it('clear() empties the store', () => {
-    store.upsert('0xA1', mkVec(0), { address: '0xa1', capability: 'c1', stake: 100, assayScore: 5000, registeredAt: '' });
-    store.clear();
+  it('clear() empties the store', async () => {
+    await store.upsert('0xA1', mkVec(0), { address: '0xa1', capability: 'c1', stake: 100, assayScore: 5000, registeredAt: '' });
+    await store.clear();
     expect(store.size()).toBe(0);
   });
 
-  it('search ranks by combinedScore descending', () => {
+  it('search ranks by combinedScore descending', async () => {
     // Two agents with the same embedding (similarity 1.0) — only score+stake differs
     const vec = mkVec(0);
-    store.upsert('0xHIGH', vec, { address: '0xhigh', capability: 'h', stake: 1_000_000_000, assayScore: 10_000, registeredAt: '' });
-    store.upsert('0xLOW',  vec, { address: '0xlow',  capability: 'l', stake: 0,             assayScore: 0,      registeredAt: '' });
+    await store.upsert('0xHIGH', vec, { address: '0xhigh', capability: 'h', stake: 1_000_000_000, assayScore: 10_000, registeredAt: '' });
+    await store.upsert('0xLOW',  vec, { address: '0xlow',  capability: 'l', stake: 0,             assayScore: 0,      registeredAt: '' });
 
     const results = store.search(vec, 10);
     expect(results[0].address).toBe('0xhigh');
@@ -544,22 +544,22 @@ describe('vectorStore', () => {
     expect(results[0].combinedScore).toBeGreaterThan(results[1].combinedScore);
   });
 
-  it('cosine similarity is 1.0 for identical vectors', () => {
+  it('cosine similarity is 1.0 for identical vectors', async () => {
     const vec = mkVec(42);
-    store.upsert('0xSAME', vec, { address: '0xsame', capability: 'x', stake: 100, assayScore: 5000, registeredAt: '' });
+    await store.upsert('0xSAME', vec, { address: '0xsame', capability: 'x', stake: 100, assayScore: 5000, registeredAt: '' });
     const results = store.search(vec, 1);
     expect(results[0].similarity).toBe(1);
   });
 
-  it('cosine similarity is 0 for orthogonal vectors', () => {
-    store.upsert('0xORT', mkVec(0), { address: '0xort', capability: 'x', stake: 100, assayScore: 5000, registeredAt: '' });
+  it('cosine similarity is 0 for orthogonal vectors', async () => {
+    await store.upsert('0xORT', mkVec(0), { address: '0xort', capability: 'x', stake: 100, assayScore: 5000, registeredAt: '' });
     const results = store.search(mkVec(1), 10); // query is orthogonal to stored vector
     expect(results[0].similarity).toBe(0);
   });
 
-  it('search respects the topK limit', () => {
+  it('search respects the topK limit', async () => {
     for (let i = 0; i < 5; i++) {
-      store.upsert(`0xX${i}`, mkVec(i), { address: `0xx${i}`, capability: `cap${i}`, stake: 100, assayScore: 5000, registeredAt: '' });
+      await store.upsert(`0xX${i}`, mkVec(i), { address: `0xx${i}`, capability: `cap${i}`, stake: 100, assayScore: 5000, registeredAt: '' });
     }
     expect(store.search(mkVec(0), 3)).toHaveLength(3);
   });
@@ -568,12 +568,12 @@ describe('vectorStore', () => {
     expect(store.search(mkVec(0), 5)).toHaveLength(0);
   });
 
-  it('stake above STAKE_REF is clamped to normStake = 1.0', () => {
+  it('stake above STAKE_REF is clamped to normStake = 1.0', async () => {
     const vec = mkVec(0);
     // 2 000 USDC stake — should be clamped to 1.0 (STAKE_REF = 1 000 USDC)
-    store.upsert('0xRICH', vec, { address: '0xrich', capability: 'rich', stake: 2_000_000_000, assayScore: 0, registeredAt: '' });
+    await store.upsert('0xRICH', vec, { address: '0xrich', capability: 'rich', stake: 2_000_000_000, assayScore: 0, registeredAt: '' });
     // Same as 1 000 USDC for scoring purposes
-    store.upsert('0xREF',  vec, { address: '0xref',  capability: 'ref',  stake: 1_000_000_000, assayScore: 0, registeredAt: '' });
+    await store.upsert('0xREF',  vec, { address: '0xref',  capability: 'ref',  stake: 1_000_000_000, assayScore: 0, registeredAt: '' });
 
     const results = store.search(vec, 10);
     const rich = results.find(r => r.address === '0xrich');

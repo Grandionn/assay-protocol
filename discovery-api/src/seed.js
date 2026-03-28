@@ -92,7 +92,7 @@ async function seedDirect() {
   console.log(`Ensuring ${SAMPLE_AGENTS.length} sample agents are indexed...`);
 
   for (const agent of SAMPLE_AGENTS) {
-    if (store.get(agent.address)) {
+    if (await store.get(agent.address)) {
       console.log(`  = ${agent.address} already present, skipping.`);
       continue;
     }

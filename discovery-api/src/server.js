@@ -4,17 +4,29 @@ const { seedDirect } = require('./seed');
 
 const PORT = process.env.PORT || 3000;
 
-app.listen(PORT, async () => {
-  console.log(`Assay Discovery API -> http://localhost:${PORT}`);
+async function startServer() {
   console.log('Embedding model loads on first request (all-MiniLM-L6-v2, ~90 MB one-time download).');
 
-  store.load();
-  console.log(`Loaded ${store.size()} persisted agents from disk.`);
+  await store.load();
+  console.log(`Loaded ${store.size()} agents into the in-memory search cache.`);
 
-  try {
-    const indexed = await seedDirect();
-    console.log(`Vector store ready with ${indexed.length} indexed agents after startup seed.`);
-  } catch (err) {
-    console.error('Auto-seed failed:', err.message);
+  if (store.size() === 0) {
+    try {
+      const indexed = await seedDirect();
+      console.log(`Vector store seeded with ${indexed.length} agents on first startup.`);
+    } catch (err) {
+      console.error('Auto-seed failed:', err.message);
+    }
+  } else {
+    console.log('Existing agents detected. Startup seed skipped.');
   }
+
+  app.listen(PORT, () => {
+    console.log(`Assay Discovery API -> http://localhost:${PORT}`);
+  });
+}
+
+startServer().catch((error) => {
+  console.error('Server startup failed:', error.message);
+  process.exitCode = 1;
 });

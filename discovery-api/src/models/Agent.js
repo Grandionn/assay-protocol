@@ -1,0 +1,18 @@
+const mongoose = require('mongoose');
+
+const agentSchema = new mongoose.Schema(
+  {
+    address: { type: String, required: true, unique: true, lowercase: true },
+    name: { type: String, default: '' },
+    capability: { type: String, required: true },
+    stake: { type: Number, required: true },
+    assayScore: { type: Number, required: true, default: 0 },
+    embedding: { type: [Number], required: true },
+    registeredAt: { type: String, default: () => new Date().toISOString() },
+  },
+  {
+    collection: 'agents',
+  },
+);
+
+module.exports = mongoose.models.Agent || mongoose.model('Agent', agentSchema);

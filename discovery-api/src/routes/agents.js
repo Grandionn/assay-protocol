@@ -55,7 +55,7 @@ async function registerAgentRecord(payload, options = {}) {
     registeredAt: options.registeredAt ?? new Date().toISOString(),
   };
 
-  store.upsert(normalised.address, embedding, metadata);
+  await store.upsert(normalised.address, embedding, metadata);
 
   return {
     message: 'Agent registered successfully',
@@ -81,8 +81,8 @@ router.post('/register', async (req, res) => {
   }
 });
 
-router.get('/:address', (req, res) => {
-  const entry = store.get(req.params.address);
+router.get('/:address', async (req, res) => {
+  const entry = await store.get(req.params.address);
 
   if (!entry) {
     return res.status(404).json({ error: 'Agent not found' });
