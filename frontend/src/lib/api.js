@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_DISCOVERY_API_URL || (import.meta.env.DEV ? '' : 'http://localhost:3001');
+const API_BASE_URL = import.meta.env.VITE_DISCOVERY_API_URL || (import.meta.env.DEV ? '' : 'http://localhost:3000');
 
 async function parseJsonResponse(response) {
   const payload = await response.json().catch(() => ({}));
@@ -11,13 +11,13 @@ async function parseJsonResponse(response) {
   return payload;
 }
 
-export async function discoverAgents(query, topK = 6) {
+export async function discoverAgents(query) {
   const response = await fetch(`${API_BASE_URL}/discover`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ query, topK }),
+    body: JSON.stringify({ query }),
   });
 
   return parseJsonResponse(response);

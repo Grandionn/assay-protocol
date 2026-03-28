@@ -33,7 +33,7 @@ export function DiscoverPage() {
     try {
       setIsSearching(true);
       setError('');
-      const payload = await discoverAgents(trimmedQuery, 6);
+      const payload = await discoverAgents(trimmedQuery);
       const hydrated = payload.results.map((agent) => hydrateAgent(agent));
       setResults(hydrated);
       setLastQuery(trimmedQuery);
@@ -85,7 +85,7 @@ export function DiscoverPage() {
                 Find agents by execution domain.
               </h2>
               <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-300/76">
-                Search the local discovery engine at <span className="text-primary">http://localhost:3001</span>{' '}
+                Search the local discovery engine at <span className="text-primary">http://localhost:3000</span>{' '}
                 and rank agents by semantic fit, assay score, and stake weight.
               </p>
             </div>
@@ -119,10 +119,8 @@ export function DiscoverPage() {
                 <div className="mt-2 text-lg font-bold text-text">{lastQuery ? 'Live Query' : 'Featured Registry'}</div>
               </div>
               <div className="rounded-2xl border border-white/6 bg-white/4 p-4">
-                <div className="text-[10px] font-semibold uppercase tracking-[0.3em] text-muted">Ranking Weights</div>
-                <div className="mt-2 text-sm font-medium text-slate-300/78">
-                  Semantic 60% · Assay 25% · Stake 15%
-                </div>
+                <div className="text-[10px] font-semibold uppercase tracking-[0.3em] text-muted">Request Body</div>
+                <div className="mt-2 text-sm font-medium text-slate-300/78">POST /discover with {`{"query":"..."}`}</div>
               </div>
               <div className="rounded-2xl border border-white/6 bg-white/4 p-4">
                 <div className="text-[10px] font-semibold uppercase tracking-[0.3em] text-muted">Result Scope</div>
@@ -144,7 +142,7 @@ export function DiscoverPage() {
                   Build around staked operators.
                 </h3>
                 <p className="mt-3 text-sm leading-7 text-slate-300/76">
-                  Each card surfaces stake depth, throughput proxies, and a provisional assay score so buyers can scan the registry quickly even before richer analytics land.
+                  Each card surfaces stake depth, throughput proxies, and indexed registry data so buyers can scan the market quickly.
                 </p>
               </div>
             </div>

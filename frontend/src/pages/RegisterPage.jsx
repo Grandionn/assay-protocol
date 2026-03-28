@@ -6,9 +6,11 @@ import { SectionHeader } from '../components/SectionHeader';
 import { StatusBadge } from '../components/StatusBadge';
 import { useWallet } from '../contexts/WalletContext';
 import { registerIndexedAgent } from '../lib/api';
-import { calculateProvisionalAssayScore, hydrateAgent, MINIMUM_STAKE_USDC } from '../lib/agent';
+import { hydrateAgent, MINIMUM_STAKE_USDC } from '../lib/agent';
 import { parseWalletError, registerAgent } from '../lib/contracts';
 import { formatUsdcCompact, truncateAddress } from '../lib/format';
+
+const INITIAL_ASSAY_SCORE = 0;
 
 export function RegisterPage() {
   const navigate = useNavigate();
@@ -38,14 +40,13 @@ export function RegisterPage() {
   }, [walletAddress]);
 
   const stakeAmountMicro = safeParseUnits(form.stakeAmount);
-  const previewScore = calculateProvisionalAssayScore(form.capability, Number(stakeAmountMicro), form.address);
   const previewAgent = hydrateAgent({
     address: form.address || walletAddress || '0x0000000000000000000000000000000000000000',
     capability:
       form.capability ||
       'Awaiting capability definitions. Submit the form to populate intelligence parameters and operating profile.',
     stake: Number(stakeAmountMicro),
-    assayScore: previewScore,
+    assayScore: INITIAL_ASSAY_SCORE,
     status: 'Under Review',
     combinedScore: 0.68,
   });
@@ -96,7 +97,7 @@ export function RegisterPage() {
         address: walletAddress,
         capability: form.capability.trim(),
         stake: Number(result.stakeAmountMicro),
-        assayScore: previewScore,
+        assayScore: INITIAL_ASSAY_SCORE,
       });
 
       setStatus({ tone: 'success', message: 'Agent registered and indexed successfully. Redirecting to the profile view.' });
@@ -121,7 +122,7 @@ export function RegisterPage() {
       <SectionHeader
         eyebrow="Protocol Onboarding"
         title="Register a staked operator"
-        description="Connect a MetaMask wallet, commit Mock USDC on Base Sepolia, and index the profile into the local discovery engine for the Assay Protocol MVP."
+        description="Connect a MetaMask wallet, commit Mock USDC on Base Sepolia, and index the profile into the discovery engine running on localhost:3000."
       />
 
       {walletError ? <Banner tone="warning" message={walletError} /> : null}
@@ -196,7 +197,7 @@ export function RegisterPage() {
             </div>
 
             <div className="rounded-3xl border border-primary/12 bg-primary/8 p-5 text-sm leading-7 text-slate-300/76">
-              For this MVP, the capability text is submitted directly to the registry contract as the manifest string and also indexed into the discovery engine with a provisional assay score.
+              Registration sends the exact discovery payload the API expects: <span className="font-mono text-primary">address</span>, <span className="font-mono text-primary">capability</span>, <span className="font-mono text-primary">stake</span>, and <span className="font-mono text-primary">assayScore</span> with a default score of <span className="font-mono text-primary">0</span> for new agents.
             </div>
 
             <button
@@ -237,7 +238,7 @@ export function RegisterPage() {
 
                 <div className="mt-5 grid gap-3 sm:grid-cols-2">
                   <PreviewMetric label="Total Stake" value={formatUsdcCompact(Number(stakeAmountMicro))} />
-                  <PreviewMetric label="Projected Assay" value={`${previewScore.toLocaleString()} / 10,000`} />
+                  <PreviewMetric label="Initial Assay" value="0 / 10,000" />
                 </div>
 
                 <div className="mt-5 flex flex-wrap gap-2">
@@ -272,7 +273,7 @@ export function RegisterPage() {
               <li>1. Connect MetaMask and switch to Base Sepolia.</li>
               <li>2. Ensure the wallet holds enough Mock USDC for the stake.</li>
               <li>3. Submit the form to approve USDC and call <span className="font-mono text-primary">registerAgent</span>.</li>
-              <li>4. Wait for discovery indexing so the agent appears on the Discover page.</li>
+              <li>4. The page then POSTs the agent to <span className="font-mono text-primary">/agents/register</span> and redirects to the new profile.</li>
             </ul>
           </article>
         </div>
