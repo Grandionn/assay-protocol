@@ -103,6 +103,10 @@ beforeEach(() => {
   getEmbedding.mockClear();
 });
 
+afterEach(() => {
+  store.clear();
+});
+
 // ═════════════════════════════════════════════════════════════════════════════
 // GET /health
 // ═════════════════════════════════════════════════════════════════════════════
@@ -402,7 +406,7 @@ describe('POST /discover', () => {
       expect(res.body.topK).toBe(2);
     });
 
-    it('uses topK = 5 by default', async () => {
+    it('uses topK = 20 by default', async () => {
       // Register 7 agents
       for (let i = 4; i <= 10; i++) {
         await register({
@@ -414,8 +418,8 @@ describe('POST /discover', () => {
       }
       // Now 3 + 7 = 10 agents in store
       const res = await discover('task');
-      expect(res.body.results.length).toBe(5);
-      expect(res.body.topK).toBe(5);
+      expect(res.body.results.length).toBe(10);
+      expect(res.body.topK).toBe(20);
     });
 
     it('returns count equal to results length', async () => {

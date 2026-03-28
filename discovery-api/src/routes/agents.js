@@ -1,7 +1,3 @@
-// src/routes/agents.js
-// POST /agents/register  — embed capability text and upsert into vector store
-// GET  /agents/:address  — return stored agent profile + embedding dimension
-
 const express = require('express');
 const { getEmbedding } = require('../embedder');
 const store = require('../vectorStore');
@@ -24,7 +20,7 @@ function validateRegisterPayload(payload) {
     throw validationError('capability is required and must be a non-empty string');
   }
   if (typeof stake !== 'number' || !Number.isFinite(stake) || stake < 0) {
-    throw validationError('stake must be a non-negative finite number (USDC × 106)');
+    throw validationError('stake must be a non-negative finite number (USDC Ã— 106)');
   }
   if (typeof assayScore !== 'number' || !Number.isFinite(assayScore) || assayScore < 0 || assayScore > 10_000) {
     throw validationError('assayScore must be a number in [0, 10000]');
@@ -49,7 +45,10 @@ function validateRegisterPayload(payload) {
 
 async function registerAgentRecord(payload, options = {}) {
   const normalised = validateRegisterPayload(payload);
-  const embedding = await getEmbedding(normalised.capability);
+  const embeddingText = normalised.name
+    ? `${normalised.name} ${normalised.capability}`
+    : normalised.capability;
+  const embedding = await getEmbedding(embeddingText);
 
   const metadata = {
     ...normalised,

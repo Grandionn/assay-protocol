@@ -88,16 +88,22 @@ const SAMPLE_AGENTS = [
 ];
 
 async function seedDirect() {
-  store.clear();
-  console.log(`Registering ${SAMPLE_AGENTS.length} sample agents directly...`);
+  let seededCount = 0;
+  console.log(`Ensuring ${SAMPLE_AGENTS.length} sample agents are indexed...`);
 
   for (const agent of SAMPLE_AGENTS) {
+    if (store.get(agent.address)) {
+      console.log(`  = ${agent.address} already present, skipping.`);
+      continue;
+    }
+
     const result = await registerAgentRecord(agent);
-    console.log(`  ? ${result.agent.address}  score=${result.agent.assayScore}  stake=${result.agent.stake}`);
+    seededCount += 1;
+    console.log(`  + ${result.agent.address}  score=${result.agent.assayScore}  stake=${result.agent.stake}`);
   }
 
   const indexed = store.list();
-  console.log(`Indexed ${indexed.length} agents.`);
+  console.log(`Indexed ${indexed.length} agents total (${seededCount} newly seeded).`);
   return indexed;
 }
 

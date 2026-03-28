@@ -17,9 +17,9 @@ router.post('/', async (req, res) => {
     return res.status(400).json({ error: 'query is required and must be a non-empty string' });
   }
 
-  // Default topK = 5; accept anything in [1, 100]
+  // Default topK = 20; accept anything in [1, 100]
   if (topK === undefined || topK === null) {
-    topK = 5;
+    topK = 20;
   }
   if (typeof topK !== 'number' || !Number.isInteger(topK) || topK < 1 || topK > 100) {
     return res.status(400).json({ error: 'topK must be an integer in [1, 100]' });
@@ -28,7 +28,7 @@ router.post('/', async (req, res) => {
   // ── Embed query + search ──────────────────────────────────────────────────
   try {
     const queryEmbedding = await getEmbedding(query.trim());
-    const results        = store.search(queryEmbedding, topK);
+    const results        = store.search(queryEmbedding, topK, query.trim());
     const { WEIGHTS }    = store;
 
     return res.json({

@@ -4,6 +4,7 @@ cache/
 coverage/
 coverage.json
 typechain-types/
+discovery-api/data/
 
 .env
 .env.local
