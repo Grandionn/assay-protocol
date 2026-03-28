@@ -75,20 +75,52 @@ export async function registerAgent({ signer, agentAddress, capability, stakeAmo
 }
 
 export async function createAndFundEscrow({ signer, agentAddress, paymentAmount, specHash, deadlineTimestamp, onStatus }) {
-  const { escrow, usdc } = getContracts(signer);
+  const { escrow, stakeRegistry, usdc } = getContracts(signer);
   const paymentMicro = ethers.parseUnits(paymentAmount, 6);
   const buyerAddress = await signer.getAddress();
+  const normalizedDeadline = BigInt(deadlineTimestamp);
+
+  if (!ethers.isAddress(agentAddress)) {
+    throw new Error('Create escrow failed: the agent address is invalid.');
+  }
+
+  if (buyerAddress.toLowerCase() === agentAddress.toLowerCase()) {
+    throw new Error('Create escrow failed: buyer and agent must be different wallets.');
+  }
+
+  if (paymentMicro <= 0n) {
+    throw new Error('Create escrow failed: payment amount must be greater than zero.');
+  }
+
+  if (normalizedDeadline <= BigInt(Math.floor(Date.now() / 1000))) {
+    throw new Error('Create escrow failed: deadline must be in the future.');
+  }
+
+  const isAgentActive = await stakeRegistry.isActive(agentAddress);
+  if (!isAgentActive) {
+    throw new Error('Create escrow failed: the selected agent is not active on the StakeRegistry.');
+  }
+
+  onStatus?.('Step 1/3: Creating escrow on-chain...');
+
+  let createReceipt;
+  try {
+    const createTx = await escrow.createEscrow(agentAddress, paymentMicro, normalizedDeadline, specHash);
+    createReceipt = await createTx.wait();
+  } catch (error) {
+    throw new Error(formatEscrowStepError('Create escrow', escrow, error));
+  }
 
   const allowance = await usdc.allowance(buyerAddress, CONTRACT_ADDRESSES.escrow);
   if (allowance < paymentMicro) {
-    onStatus?.('Step 1/3: Approving USDC for escrow...');
-    const approveTx = await usdc.approve(CONTRACT_ADDRESSES.escrow, paymentMicro);
-    await approveTx.wait();
+    onStatus?.('Step 2/3: Approving USDC for escrow...');
+    try {
+      const approveTx = await usdc.approve(CONTRACT_ADDRESSES.escrow, paymentMicro);
+      await approveTx.wait();
+    } catch (error) {
+      throw new Error(`Approve escrow allowance failed: ${parseWalletError(error)}`);
+    }
   }
-
-  onStatus?.('Step 2/3: Creating escrow on-chain...');
-  const createTx = await escrow.createEscrow(agentAddress, paymentMicro, BigInt(deadlineTimestamp), specHash);
-  const createReceipt = await createTx.wait();
 
   const createdEvent = createReceipt.logs
     .map((log) => {
@@ -114,8 +146,13 @@ export async function createAndFundEscrow({ signer, agentAddress, paymentAmount,
   }
 
   onStatus?.('Step 3/3: Funding escrow...');
-  const fundTx = await escrow.fundEscrow(escrowId);
-  const fundReceipt = await fundTx.wait();
+  let fundReceipt;
+  try {
+    const fundTx = await escrow.fundEscrow(escrowId);
+    fundReceipt = await fundTx.wait();
+  } catch (error) {
+    throw new Error(formatEscrowStepError('Fund escrow', escrow, error));
+  }
 
   return {
     escrowId: BigInt(escrowId),
@@ -279,4 +316,64 @@ export function parseWalletError(error) {
     error?.message ||
     'Transaction failed.'
   );
+}
+
+function formatEscrowStepError(stepLabel, escrowContract, error) {
+  const parsedError = parseContractError(escrowContract, error);
+
+  if (parsedError?.name === 'AgentNotActive') {
+    return `${stepLabel} failed: the selected agent is not active on the StakeRegistry.`;
+  }
+
+  if (parsedError?.name === 'SelfDeal') {
+    return `${stepLabel} failed: buyer and agent must be different wallets.`;
+  }
+
+  if (parsedError?.name === 'DeadlineInPast') {
+    return `${stepLabel} failed: the deadline must be in the future.`;
+  }
+
+  if (parsedError?.name === 'ZeroAmount') {
+    return `${stepLabel} failed: payment amount must be greater than zero.`;
+  }
+
+  if (parsedError?.name === 'NotBuyer') {
+    return `${stepLabel} failed: only the escrow buyer wallet can fund this escrow.`;
+  }
+
+  if (parsedError?.name === 'EscrowNotFound') {
+    return `${stepLabel} failed: the escrow could not be found on-chain.`;
+  }
+
+  if (parsedError?.name === 'InvalidStatus') {
+    const current = getEscrowStatusLabel(parsedError.args?.current ?? parsedError.args?.[0] ?? 0);
+    const expected = getEscrowStatusLabel(parsedError.args?.expected ?? parsedError.args?.[1] ?? 0);
+    return `${stepLabel} failed: escrow status is ${current}, expected ${expected}.`;
+  }
+
+  const fallbackMessage = parseWalletError(error);
+  return `${stepLabel} failed: ${fallbackMessage}`;
+}
+
+function parseContractError(contract, error) {
+  const candidates = [
+    error?.data,
+    error?.info?.error?.data,
+    error?.info?.data,
+    error?.error?.data,
+  ];
+
+  for (const candidate of candidates) {
+    if (typeof candidate !== 'string') {
+      continue;
+    }
+
+    try {
+      return contract.interface.parseError(candidate);
+    } catch {
+      // Try the next candidate.
+    }
+  }
+
+  return null;
 }

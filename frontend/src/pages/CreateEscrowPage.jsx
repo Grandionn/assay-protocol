@@ -118,6 +118,11 @@ export function CreateEscrowPage() {
       return;
     }
 
+    if (!agent.active) {
+      setStatus({ tone: 'error', message: 'This agent is not active on the on-chain StakeRegistry, so escrow creation is unavailable.' });
+      return;
+    }
+
     const deadlineTimestamp = Math.floor(new Date(form.deadline).getTime() / 1000);
     if (!Number.isFinite(deadlineTimestamp) || deadlineTimestamp <= Math.floor(Date.now() / 1000)) {
       setStatus({ tone: 'error', message: 'Choose a deadline in the future.' });
@@ -178,6 +183,12 @@ export function CreateEscrowPage() {
 
       {walletError ? <Banner tone="warning" message={walletError} /> : null}
       {status.message ? <Banner tone={status.tone} message={status.message} /> : null}
+      {!agent.active ? (
+        <Banner
+          tone="warning"
+          message="This agent is not currently active on the on-chain StakeRegistry. Escrow creation is disabled until the registry reports the agent as active."
+        />
+      ) : null}
 
       {!walletAddress ? (
         <article className="panel rounded-[32px] p-6 md:p-8">
@@ -274,7 +285,7 @@ export function CreateEscrowPage() {
 
             <button
               type="submit"
-              disabled={isSubmitting || isConnecting || !hasWallet}
+              disabled={isSubmitting || isConnecting || !hasWallet || !agent.active}
               className="electric-button inline-flex w-full items-center justify-center gap-3 rounded-2xl px-5 py-4 text-sm font-semibold uppercase tracking-[0.28em] transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-70"
             >
               {isSubmitting ? <LoaderCircle size={18} className="animate-spin" /> : <ShieldCheck size={18} />}
