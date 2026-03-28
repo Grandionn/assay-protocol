@@ -3,12 +3,12 @@
 //
 // Combined score formula (all components normalised to [0, 1]):
 //
-//   combinedScore = 0.60 × cosineSimilarity
-//                 + 0.25 × (assayScore / 10_000)
-//                 + 0.15 × min(stake / STAKE_REF, 1)
+//   combinedScore = 0.60 Ã— cosineSimilarity
+//                 + 0.25 Ã— (assayScore / 10_000)
+//                 + 0.15 Ã— min(stake / STAKE_REF, 1)
 //
 // STAKE_REF is the stake amount that earns a full 1.0 normalised stake component.
-// Set to 1 000 USDC (6-decimal units) — agents with ≥ 1 000 USDC staked score the maximum.
+// Set to 1 000 USDC (6-decimal units) â€” agents with â‰¥ 1 000 USDC staked score the maximum.
 
 const SEMANTIC_WEIGHT = 0.60;
 const SCORE_WEIGHT    = 0.25;
@@ -17,10 +17,10 @@ const STAKE_WEIGHT    = 0.15;
 const MAX_ASSAY_SCORE  = 10_000;
 const STAKE_REF        = 1_000 * 1_000_000; // 1 000 USDC in 6-decimal units
 
-// address (lowercase) → { embedding: number[], metadata: object }
+// address (lowercase) â†’ { embedding: number[], metadata: object }
 const _store = new Map();
 
-// ── Math helpers ─────────────────────────────────────────────────────────────
+// â”€â”€ Math helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function _dot(a, b) {
   let s = 0;
@@ -49,7 +49,7 @@ function _round4(n) {
   return Math.round(n * 10_000) / 10_000;
 }
 
-// ── Public API ────────────────────────────────────────────────────────────────
+// â”€â”€ Public API â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /**
  * Insert or update an agent.
@@ -112,6 +112,7 @@ function search(queryEmbedding, topK = 10) {
       assayScore:    metadata.assayScore,
       stake:         metadata.stake,
       registeredAt:  metadata.registeredAt,
+      name:          metadata.name,
       similarity:    _round4(sim),
       combinedScore: _round4(combined),
       scoreBreakdown: {
