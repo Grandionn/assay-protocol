@@ -6,10 +6,11 @@ import { EmptyState } from '../components/EmptyState';
 import { LoadingState } from '../components/LoadingState';
 import { SectionHeader } from '../components/SectionHeader';
 import { useWallet } from '../contexts/WalletContext';
-import { fetchIndexedAgent } from '../lib/api';
+import { fetchIndexedAgent, registerIndexedAgent } from '../lib/api';
 import { hydrateAgent } from '../lib/agent';
 import {
   fetchEscrowDetails,
+  fetchOnChainScore,
   getContracts,
   parseWalletError,
   submitDeliverable,
@@ -155,7 +156,24 @@ export function EscrowDetailPage() {
         qualityScore,
         onStatus: (message) => setStatus({ tone: 'info', message }),
       });
-      setStatus({ tone: 'success', message: 'Escrow settled. Assay Score will update.' });
+
+      const updatedScore = await fetchOnChainScore(provider, escrow.agent);
+      if (updatedScore != null) {
+        const indexedAgent = await fetchIndexedAgent(escrow.agent).catch(() => null);
+        const sourceAgent = indexedAgent?.agent ?? agentProfile;
+
+        if (sourceAgent?.capability) {
+          await registerIndexedAgent({
+            address: escrow.agent,
+            name: sourceAgent.name?.trim?.() ?? sourceAgent.name ?? '',
+            capability: sourceAgent.capability,
+            stake: Number(sourceAgent.stake ?? 0),
+            assayScore: updatedScore,
+          }).catch(() => null);
+        }
+      }
+
+      setStatus({ tone: 'success', message: 'Escrow settled. Assay Score updated.' });
       await loadEscrowState();
     } catch (verifyError) {
       setStatus({ tone: 'error', message: parseWalletError(verifyError) });

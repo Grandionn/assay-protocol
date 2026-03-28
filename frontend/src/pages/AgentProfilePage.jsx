@@ -19,7 +19,7 @@ import { StatusBadge } from '../components/StatusBadge';
 import { useWallet } from '../contexts/WalletContext';
 import { fetchIndexedAgent } from '../lib/api';
 import { hydrateAgent } from '../lib/agent';
-import { fetchAgentHistory, fetchOnChainAgent } from '../lib/contracts';
+import { fetchAgentHistory, fetchOnChainAgent, fetchOnChainScore } from '../lib/contracts';
 import { formatPercent, formatUsdc, formatUsdcCompact, truncateAddress } from '../lib/format';
 
 export function AgentProfilePage() {
@@ -39,7 +39,7 @@ export function AgentProfilePage() {
       setError('');
 
       try {
-        const [indexedAgent, onChainAgent] = await Promise.all([
+        const [indexedAgent, onChainAgent, onChainScore] = await Promise.all([
           fetchIndexedAgent(address).catch((requestError) => {
             if (requestError.message.includes('not found')) {
               return null;
@@ -47,13 +47,25 @@ export function AgentProfilePage() {
             throw requestError;
           }),
           fetchOnChainAgent(provider, address).catch(() => null),
+          fetchOnChainScore(provider, address).catch(() => null),
         ]);
 
         if (!indexedAgent && !onChainAgent) {
           throw new Error('Agent not found in the discovery engine or the on-chain registry.');
         }
 
-        const hydrated = hydrateAgent(indexedAgent?.agent ?? { address }, onChainAgent ?? {});
+        const indexedMetadata = indexedAgent?.agent ?? null;
+        const indexedScore = indexedMetadata?.assayScore ?? 0;
+        const mergedScore =
+          onChainScore != null && (indexedScore === 0 || onChainScore > indexedScore)
+            ? onChainScore
+            : indexedScore;
+        const hydrated = hydrateAgent(
+          indexedMetadata
+            ? { ...indexedMetadata, assayScore: mergedScore }
+            : { address, assayScore: mergedScore },
+          onChainAgent ?? {},
+        );
         const ledger = await fetchAgentHistory(provider, address).catch(() => []);
 
         if (!ignore) {

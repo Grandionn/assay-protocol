@@ -53,6 +53,21 @@ export async function fetchOnChainAgent(provider, address) {
   };
 }
 
+export async function fetchOnChainScore(provider, agentAddress) {
+  if (!provider || !ethers.isAddress(agentAddress)) {
+    return null;
+  }
+
+  const { reputation } = getContracts(provider);
+
+  try {
+    const score = await reputation.getScore(agentAddress);
+    return Number(score);
+  } catch {
+    return null;
+  }
+}
+
 export async function registerAgent({ signer, agentAddress, capability, stakeAmount, onStatus }) {
   const { stakeRegistry, usdc } = getContracts(signer);
   const stakeAmountMicro = ethers.parseUnits(stakeAmount, 6);
@@ -276,9 +291,9 @@ export async function fetchAgentHistory(provider, address) {
     return [];
   }
 
-  const { stakeRegistry } = getContracts(provider);
+  const { escrow, stakeRegistry } = getContracts(provider);
 
-  const groupedLogs = await Promise.all(
+  const registryGroupedLogs = await Promise.all(
     EVENT_MAPPERS.map(async (eventMapper) => {
       const logs = await stakeRegistry.queryFilter(eventMapper.filter(stakeRegistry, address));
       return logs.map((log) => ({
@@ -288,7 +303,61 @@ export async function fetchAgentHistory(provider, address) {
     }),
   );
 
-  const rows = groupedLogs.flat();
+  const createdLogs = await escrow.queryFilter(escrow.filters.EscrowCreated(null, null, address));
+  const escrowIds = [...new Set(createdLogs.map((log) => log.args?.escrowId?.toString()).filter(Boolean))];
+
+  const [fundedGroupedLogs, deliverableGroupedLogs, settledLogs] = await Promise.all([
+    Promise.all(
+      escrowIds.map(async (escrowId) => {
+        const logs = await escrow.queryFilter(escrow.filters.EscrowFunded(BigInt(escrowId)));
+        return logs.map((log) => ({
+          hash: log.transactionHash,
+          method: 'ESCROW_FUNDED',
+          status: 'Confirmed',
+          amount: log.args.amount,
+          label: 'Escrow Funded',
+          blockNumber: log.blockNumber,
+        }));
+      }),
+    ),
+    Promise.all(
+      escrowIds.map(async (escrowId) => {
+        const logs = await escrow.queryFilter(escrow.filters.DeliverableSubmitted(BigInt(escrowId)));
+        return logs.map((log) => ({
+          hash: log.transactionHash,
+          method: 'DELIVERABLE',
+          status: 'Confirmed',
+          amount: 0,
+          label: 'Deliverable Submitted',
+          blockNumber: log.blockNumber,
+        }));
+      }),
+    ),
+    escrow.queryFilter(escrow.filters.EscrowSettled(null, address)),
+  ]);
+
+  const escrowRows = [
+    ...createdLogs.map((log) => ({
+      hash: log.transactionHash,
+      method: 'ESCROW_CREATED',
+      status: 'Confirmed',
+      amount: log.args.amount,
+      label: 'Escrow Created',
+      blockNumber: log.blockNumber,
+    })),
+    ...fundedGroupedLogs.flat(),
+    ...deliverableGroupedLogs.flat(),
+    ...settledLogs.map((log) => ({
+      hash: log.transactionHash,
+      method: 'ESCROW_SETTLED',
+      status: 'Confirmed',
+      amount: log.args.agentPayment,
+      label: 'Escrow Settled',
+      blockNumber: log.blockNumber,
+    })),
+  ];
+
+  const rows = [...registryGroupedLogs.flat(), ...escrowRows];
   const uniqueBlocks = [...new Set(rows.map((row) => row.blockNumber))];
   const blockEntries = await Promise.all(
     uniqueBlocks.map(async (blockNumber) => [blockNumber, await provider.getBlock(blockNumber)]),
