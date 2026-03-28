@@ -160,21 +160,14 @@ export function AgentProfilePage() {
                       {copied ? 'Copied' : 'Copy'}
                     </button>
                   </div>
-                </div>
-
-                <div className="flex flex-col gap-3">
-                  <button
-                    type="button"
-                    disabled
-                    title="Coming Soon"
-                    className="group relative inline-flex items-center justify-center gap-2 rounded-2xl border border-white/8 bg-white/4 px-5 py-4 text-sm font-semibold text-muted opacity-85"
+                </div>                <div className="flex flex-col gap-3">
+                  <Link
+                    to={`/escrow/create/${agent.address}`}
+                    className="group relative inline-flex items-center justify-center gap-2 rounded-2xl electric-button px-5 py-4 text-sm font-semibold uppercase tracking-[0.26em] transition hover:brightness-110"
                   >
                     Create Escrow
                     <ArrowUpRight size={16} />
-                    <span className="absolute -top-10 right-0 hidden rounded-xl border border-white/8 bg-surface px-3 py-2 text-xs text-text group-hover:block">
-                      Coming Soon
-                    </span>
-                  </button>
+                  </Link>
                   <div className="rounded-2xl border border-primary/12 bg-primary/8 px-4 py-3 text-xs leading-6 text-slate-300/76">
                     On-chain earnings and stake pull directly from the deployed registry when MetaMask is available.
                   </div>

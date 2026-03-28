@@ -1,12 +1,23 @@
 import { ethers } from 'ethers';
 import mockUsdcAbi from '../abi/MockUSDC.json';
 import stakeRegistryAbi from '../abi/AssayStakeRegistry.json';
+import escrowAbi from '../abi/AssayEscrow.json';
+import reputationAbi from '../abi/AssayReputation.json';
 import { formatDateTime, formatUsdc } from './format';
 
 export const CONTRACT_ADDRESSES = {
   mockUsdc: '0x0e645C8f28c2B0511CCb29B1b22b899ADcd7e256',
   stakeRegistry: '0x20ddFAedc1Fca9Bbd5d660384bf24cCbeEB1d7f9',
+  escrow: '0x17E177d698A244E13f84446982BA772eBdCed567',
+  reputation: '0xD6a81ADd33398A777640787b2f48D7A33D46fbab',
 };
+
+export const ESCROW_STATUS_LABELS = ['Created', 'Funded', 'Submitted', 'Settled', 'Refunded', 'Disputed'];
+
+export function getEscrowStatusLabel(status) {
+  const normalizedStatus = typeof status === 'bigint' ? Number(status) : Number(status ?? 0);
+  return ESCROW_STATUS_LABELS[normalizedStatus] ?? `Unknown (${normalizedStatus})`;
+}
 
 export function getContracts(signerOrProvider) {
   return {
@@ -16,6 +27,8 @@ export function getContracts(signerOrProvider) {
       signerOrProvider,
     ),
     usdc: new ethers.Contract(CONTRACT_ADDRESSES.mockUsdc, mockUsdcAbi, signerOrProvider),
+    escrow: new ethers.Contract(CONTRACT_ADDRESSES.escrow, escrowAbi, signerOrProvider),
+    reputation: new ethers.Contract(CONTRACT_ADDRESSES.reputation, reputationAbi, signerOrProvider),
   };
 }
 
@@ -58,6 +71,103 @@ export async function registerAgent({ signer, agentAddress, capability, stakeAmo
   return {
     stakeAmountMicro,
     receipt,
+  };
+}
+
+export async function createAndFundEscrow({ signer, agentAddress, paymentAmount, specHash, deadlineTimestamp, onStatus }) {
+  const { escrow, usdc } = getContracts(signer);
+  const paymentMicro = ethers.parseUnits(paymentAmount, 6);
+  const buyerAddress = await signer.getAddress();
+
+  const allowance = await usdc.allowance(buyerAddress, CONTRACT_ADDRESSES.escrow);
+  if (allowance < paymentMicro) {
+    onStatus?.('Step 1/3: Approving USDC for escrow...');
+    const approveTx = await usdc.approve(CONTRACT_ADDRESSES.escrow, paymentMicro);
+    await approveTx.wait();
+  }
+
+  onStatus?.('Step 2/3: Creating escrow on-chain...');
+  const createTx = await escrow.createEscrow(agentAddress, paymentMicro, BigInt(deadlineTimestamp), specHash);
+  const createReceipt = await createTx.wait();
+
+  const createdEvent = createReceipt.logs
+    .map((log) => {
+      try {
+        return escrow.interface.parseLog(log);
+      } catch {
+        return null;
+      }
+    })
+    .find((parsed) => parsed?.name === 'EscrowCreated');
+
+  let escrowId = createdEvent?.args?.escrowId ?? createdEvent?.args?.[0] ?? null;
+
+  if (escrowId == null) {
+    const nextEscrowId = await escrow.nextEscrowId();
+    if (nextEscrowId > 0n) {
+      escrowId = nextEscrowId - 1n;
+    }
+  }
+
+  if (escrowId == null) {
+    throw new Error('Escrow creation succeeded but the escrow ID could not be resolved from logs.');
+  }
+
+  onStatus?.('Step 3/3: Funding escrow...');
+  const fundTx = await escrow.fundEscrow(escrowId);
+  const fundReceipt = await fundTx.wait();
+
+  return {
+    escrowId: BigInt(escrowId),
+    paymentMicro,
+    createReceipt,
+    fundReceipt,
+  };
+}
+
+export async function submitDeliverable({ signer, escrowId, deliverableHash, onStatus }) {
+  const { escrow } = getContracts(signer);
+  onStatus?.('Submitting deliverable on-chain...');
+  const tx = await escrow.submitDeliverable(BigInt(escrowId), deliverableHash);
+  const receipt = await tx.wait();
+  return { receipt };
+}
+
+export async function verifyAndSettle({ signer, escrowId, success = true, qualityScore = 100, onStatus }) {
+  const { escrow } = getContracts(signer);
+  const normalizedQualityScore = Math.max(0, Math.min(100, Math.round(Number(qualityScore) || 0)));
+  onStatus?.('Verifying and settling escrow...');
+  const tx = await escrow.verifyAndSettle(BigInt(escrowId), success, BigInt(normalizedQualityScore));
+  const receipt = await tx.wait();
+  return { receipt };
+}
+
+export async function fetchEscrowDetails(provider, escrowId) {
+  if (!provider) {
+    throw new Error('A provider is required to read escrow details.');
+  }
+
+  const { escrow } = getContracts(provider);
+  const normalizedEscrowId = BigInt(escrowId);
+  const details = await escrow.getEscrow(normalizedEscrowId);
+
+  if ((details.createdAt ?? 0n) === 0n && (details.buyer ?? ethers.ZeroAddress) === ethers.ZeroAddress) {
+    throw new Error('Escrow not found.');
+  }
+
+  return {
+    escrowId: normalizedEscrowId,
+    buyer: details.buyer,
+    agent: details.agent,
+    amount: details.amount,
+    deadline: details.deadline,
+    specHash: details.specHash,
+    deliverableHash: details.deliverableHash,
+    status: details.status,
+    statusLabel: getEscrowStatusLabel(details.status),
+    createdAt: details.createdAt,
+    fundedAt: details.fundedAt,
+    submittedAt: details.submittedAt,
   };
 }
 
