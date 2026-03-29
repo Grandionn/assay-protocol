@@ -19,13 +19,15 @@ import { StatusBadge } from '../components/StatusBadge';
 import { useWallet } from '../contexts/WalletContext';
 import { fetchIndexedAgent } from '../lib/api';
 import { hydrateAgent } from '../lib/agent';
-import { fetchAgentHistory, fetchOnChainAgent, fetchOnChainScore } from '../lib/contracts';
+import { fetchAgentHistory, fetchAgentStats, fetchOnChainAgent, fetchOnChainScore } from '../lib/contracts';
 import { formatPercent, formatUsdc, formatUsdcCompact, truncateAddress } from '../lib/format';
 
 export function AgentProfilePage() {
   const { address } = useParams();
-  const { provider } = useWallet();
+  const { provider, readProvider } = useWallet();
+  const effectiveProvider = provider ?? readProvider;
   const [agent, setAgent] = useState(null);
+  const [agentStats, setAgentStats] = useState(null);
   const [history, setHistory] = useState([]);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -39,15 +41,16 @@ export function AgentProfilePage() {
       setError('');
 
       try {
-        const [indexedAgent, onChainAgent, onChainScore] = await Promise.all([
+        const [indexedAgent, onChainAgent, onChainScore, onChainStats] = await Promise.all([
           fetchIndexedAgent(address).catch((requestError) => {
             if (requestError.message.includes('not found')) {
               return null;
             }
             throw requestError;
           }),
-          fetchOnChainAgent(provider, address).catch(() => null),
-          fetchOnChainScore(provider, address).catch(() => null),
+          fetchOnChainAgent(effectiveProvider, address).catch(() => null),
+          fetchOnChainScore(effectiveProvider, address).catch(() => null),
+          fetchAgentStats(effectiveProvider, address).catch(() => null),
         ]);
 
         if (!indexedAgent && !onChainAgent) {
@@ -65,17 +68,25 @@ export function AgentProfilePage() {
             ? { ...indexedMetadata, assayScore: mergedScore }
             : { address, assayScore: mergedScore },
           onChainAgent ?? {},
+          onChainStats,
         );
-        const ledger = await fetchAgentHistory(provider, address).catch(() => []);
+        let ledger = [];
+        try {
+          ledger = await fetchAgentHistory(effectiveProvider, address);
+        } catch (historyError) {
+          console.warn('Transaction ledger fetch failed:', historyError);
+        }
 
         if (!ignore) {
           setAgent(hydrated);
           setHistory(ledger);
+          setAgentStats(onChainStats);
         }
       } catch (loadError) {
         if (!ignore) {
           setError(loadError.message);
           setAgent(null);
+          setAgentStats(null);
           setHistory([]);
         }
       } finally {
@@ -90,7 +101,7 @@ export function AgentProfilePage() {
     return () => {
       ignore = true;
     };
-  }, [address, provider]);
+  }, [address, effectiveProvider]);
 
   async function handleCopyAddress() {
     if (!agent?.address || !navigator.clipboard) {
@@ -233,7 +244,11 @@ export function AgentProfilePage() {
                 {agent.assayScore.toLocaleString()}
               </div>
               <div className="mt-3 max-w-xs text-sm leading-7 text-slate-300/74">
-                Displayed directly from indexed discovery data when available.
+                {agent.assayScore === 0 && agentStats
+                  ? agentStats.totalJobs === 0
+                    ? 'No verified transactions recorded on-chain yet.'
+                    : `${agentStats.completedJobs}/3 verified — score unlocks after 3 completed transactions.`
+                  : 'Computed from on-chain transaction history via AssayReputation.'}
               </div>
             </div>
             <AssayScoreRing value={agent.assayScore} />
@@ -295,7 +310,7 @@ export function AgentProfilePage() {
             <div className="text-xs font-semibold uppercase tracking-[0.32em] text-primary">Transaction Ledger</div>
             <h2 className="mt-2 font-display text-2xl font-bold tracking-[-0.06em] text-text">Recent registry activity</h2>
           </div>
-          <div className="text-sm text-slate-300/72">Powered by AssayStakeRegistry event history</div>
+          <div className="text-sm text-slate-300/72">Powered by on-chain StakeRegistry and Escrow event history</div>
         </div>
 
         {history.length > 0 ? (

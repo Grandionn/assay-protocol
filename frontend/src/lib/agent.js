@@ -66,7 +66,7 @@ export function deriveStatus({ stake, active, registered }) {
   return 'Under Review';
 }
 
-export function hydrateAgent(rawAgent, onChainAgent = {}) {
+export function hydrateAgent(rawAgent, onChainAgent = {}, onChainStats = null) {
   const address = rawAgent?.address ?? onChainAgent?.address ?? '';
   const capability = rawAgent?.capability ?? onChainAgent?.capability ?? onChainAgent?.capabilityHash ?? '';
   const stake = rawAgent?.stake ?? onChainAgent?.stake ?? 0;
@@ -75,6 +75,17 @@ export function hydrateAgent(rawAgent, onChainAgent = {}) {
   const tags = rawAgent?.tags ?? extractCapabilityTags(capability);
   const active = onChainAgent?.active ?? rawAgent?.active ?? false;
   const registered = onChainAgent?.registered ?? Boolean(rawAgent?.registeredAt);
+  let completionRate = rawAgent?.completionRate ?? null;
+  let avgSpeedMs = rawAgent?.avgSpeedMs ?? null;
+  let reliabilityStreak = rawAgent?.reliabilityStreak ?? 0;
+
+  if (onChainStats && onChainStats.totalJobs > 0) {
+    completionRate = (onChainStats.completedJobs / onChainStats.totalJobs) * 100;
+    reliabilityStreak = onChainStats.currentStreak;
+    if (onChainStats.completedJobs > 0) {
+      avgSpeedMs = Math.round(onChainStats.totalSpeedScore / onChainStats.completedJobs);
+    }
+  }
 
   return {
     ...rawAgent,
@@ -88,9 +99,9 @@ export function hydrateAgent(rawAgent, onChainAgent = {}) {
     active,
     registered,
     status: rawAgent?.status ?? deriveStatus({ stake, active, registered }),
-    completionRate: rawAgent?.completionRate ?? null,
-    avgSpeedMs: rawAgent?.avgSpeedMs ?? null,
-    reliabilityStreak: rawAgent?.reliabilityStreak ?? 0,
+    completionRate,
+    avgSpeedMs,
+    reliabilityStreak,
     shortAddress: truncateAddress(address),
     combinedScore: rawAgent?.combinedScore ?? 0,
     totalEarnings: onChainAgent?.earnings ?? rawAgent?.totalEarnings ?? 0,

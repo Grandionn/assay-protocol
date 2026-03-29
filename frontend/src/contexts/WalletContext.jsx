@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { ethers } from 'ethers';
 
 const BASE_SEPOLIA = {
@@ -16,6 +16,10 @@ const BASE_SEPOLIA = {
 const WalletContext = createContext(null);
 
 export function WalletProvider({ children }) {
+  const readProvider = useMemo(
+    () => new ethers.JsonRpcProvider('https://sepolia.base.org'),
+    [],
+  );
   const [provider, setProvider] = useState(null);
   const [signer, setSigner] = useState(null);
   const [address, setAddress] = useState('');
@@ -124,6 +128,7 @@ export function WalletProvider({ children }) {
 
   const value = {
     provider,
+    readProvider,
     signer,
     address,
     chainId,

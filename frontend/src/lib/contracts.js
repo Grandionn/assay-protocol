@@ -68,6 +68,24 @@ export async function fetchOnChainScore(provider, agentAddress) {
   }
 }
 
+export async function fetchAgentStats(provider, agentAddress) {
+  if (!provider || !ethers.isAddress(agentAddress)) return null;
+  const { reputation } = getContracts(provider);
+  try {
+    const stats = await reputation.getAgentStats(agentAddress);
+    return {
+      totalJobs: Number(stats.totalJobs),
+      completedJobs: Number(stats.completedJobs),
+      totalSpeedScore: Number(stats.totalSpeedScore),
+      totalQualityScore: Number(stats.totalQualityScore),
+      currentStreak: Number(stats.currentStreak),
+      lastActivityPeriod: Number(stats.lastActivityPeriod),
+    };
+  } catch {
+    return null;
+  }
+}
+
 export async function registerAgent({ signer, agentAddress, capability, stakeAmount, onStatus }) {
   const { stakeRegistry, usdc } = getContracts(signer);
   const stakeAmountMicro = ethers.parseUnits(stakeAmount, 6);
@@ -303,11 +321,20 @@ export async function fetchAgentHistory(provider, address) {
     }),
   );
 
-  const createdLogs = await escrow.queryFilter(escrow.filters.EscrowCreated(null, null, address));
+  let createdLogs = [];
+  try {
+    createdLogs = await escrow.queryFilter(escrow.filters.EscrowCreated(null, null, address));
+  } catch (e) {
+    console.warn('Failed to fetch EscrowCreated events:', e);
+  }
   const escrowIds = [...new Set(createdLogs.map((log) => log.args?.escrowId?.toString()).filter(Boolean))];
 
-  const [fundedGroupedLogs, deliverableGroupedLogs, settledLogs] = await Promise.all([
-    Promise.all(
+  let fundedGroupedLogs = [];
+  let deliverableGroupedLogs = [];
+  let settledLogs = [];
+
+  try {
+    fundedGroupedLogs = await Promise.all(
       escrowIds.map(async (escrowId) => {
         const logs = await escrow.queryFilter(escrow.filters.EscrowFunded(BigInt(escrowId)));
         return logs.map((log) => ({
@@ -319,8 +346,13 @@ export async function fetchAgentHistory(provider, address) {
           blockNumber: log.blockNumber,
         }));
       }),
-    ),
-    Promise.all(
+    );
+  } catch (e) {
+    console.warn('Failed to fetch EscrowFunded events:', e);
+  }
+
+  try {
+    deliverableGroupedLogs = await Promise.all(
       escrowIds.map(async (escrowId) => {
         const logs = await escrow.queryFilter(escrow.filters.DeliverableSubmitted(BigInt(escrowId)));
         return logs.map((log) => ({
@@ -332,9 +364,16 @@ export async function fetchAgentHistory(provider, address) {
           blockNumber: log.blockNumber,
         }));
       }),
-    ),
-    escrow.queryFilter(escrow.filters.EscrowSettled(null, address)),
-  ]);
+    );
+  } catch (e) {
+    console.warn('Failed to fetch DeliverableSubmitted events:', e);
+  }
+
+  try {
+    settledLogs = await escrow.queryFilter(escrow.filters.EscrowSettled(null, address));
+  } catch (e) {
+    console.warn('Failed to fetch EscrowSettled events:', e);
+  }
 
   const escrowRows = [
     ...createdLogs.map((log) => ({
