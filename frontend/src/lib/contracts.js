@@ -12,6 +12,8 @@ export const CONTRACT_ADDRESSES = {
   reputation: '0xD6a81ADd33398A777640787b2f48D7A33D46fbab',
 };
 
+const DEPLOY_BLOCK = 39_430_000;
+
 export const ESCROW_STATUS_LABELS = ['Created', 'Funded', 'Submitted', 'Settled', 'Refunded', 'Disputed'];
 
 export function getEscrowStatusLabel(status) {
@@ -313,7 +315,7 @@ export async function fetchAgentHistory(provider, address) {
 
   const registryGroupedLogs = await Promise.all(
     EVENT_MAPPERS.map(async (eventMapper) => {
-      const logs = await stakeRegistry.queryFilter(eventMapper.filter(stakeRegistry, address));
+      const logs = await stakeRegistry.queryFilter(eventMapper.filter(stakeRegistry, address), DEPLOY_BLOCK);
       return logs.map((log) => ({
         ...eventMapper.toRow(log),
         blockNumber: log.blockNumber,
@@ -323,7 +325,7 @@ export async function fetchAgentHistory(provider, address) {
 
   let createdLogs = [];
   try {
-    createdLogs = await escrow.queryFilter(escrow.filters.EscrowCreated(null, null, address));
+    createdLogs = await escrow.queryFilter(escrow.filters.EscrowCreated(null, null, address), DEPLOY_BLOCK);
   } catch (e) {
     console.warn('Failed to fetch EscrowCreated events:', e);
   }
@@ -336,7 +338,7 @@ export async function fetchAgentHistory(provider, address) {
   try {
     fundedGroupedLogs = await Promise.all(
       escrowIds.map(async (escrowId) => {
-        const logs = await escrow.queryFilter(escrow.filters.EscrowFunded(BigInt(escrowId)));
+        const logs = await escrow.queryFilter(escrow.filters.EscrowFunded(BigInt(escrowId)), DEPLOY_BLOCK);
         return logs.map((log) => ({
           hash: log.transactionHash,
           method: 'ESCROW_FUNDED',
@@ -354,7 +356,7 @@ export async function fetchAgentHistory(provider, address) {
   try {
     deliverableGroupedLogs = await Promise.all(
       escrowIds.map(async (escrowId) => {
-        const logs = await escrow.queryFilter(escrow.filters.DeliverableSubmitted(BigInt(escrowId)));
+        const logs = await escrow.queryFilter(escrow.filters.DeliverableSubmitted(BigInt(escrowId)), DEPLOY_BLOCK);
         return logs.map((log) => ({
           hash: log.transactionHash,
           method: 'DELIVERABLE',
@@ -370,7 +372,7 @@ export async function fetchAgentHistory(provider, address) {
   }
 
   try {
-    settledLogs = await escrow.queryFilter(escrow.filters.EscrowSettled(null, address));
+    settledLogs = await escrow.queryFilter(escrow.filters.EscrowSettled(null, address), DEPLOY_BLOCK);
   } catch (e) {
     console.warn('Failed to fetch EscrowSettled events:', e);
   }
