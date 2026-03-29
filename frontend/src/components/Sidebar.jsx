@@ -6,7 +6,7 @@ import { NavLink } from 'react-router-dom';
 
 const primaryItems = [
   { label: 'Discover', to: '/discover', icon: LayoutGrid },
-  { label: 'Register Agent', to: '/register', icon: ReceiptText },
+  { label: 'Register', to: '/register', icon: ReceiptText },
 ];
 
 export function Sidebar() {

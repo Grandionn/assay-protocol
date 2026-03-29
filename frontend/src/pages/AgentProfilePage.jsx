@@ -161,9 +161,9 @@ export function AgentProfilePage() {
   return (
     <div className="space-y-8">
       <SectionHeader
-        eyebrow="Agent Profile"
+        eyebrow="Agent"
         title={agent.name}
-        description="Indexed metadata and on-chain registry signals are merged below. Discovery-engine fields fall back gracefully when only contract data is available."
+        description="On-chain registration data and verified transaction history."
       />
 
       {error ? <div className="rounded-2xl border border-warning/25 bg-warning/10 px-4 py-3 text-sm text-warning">{error}</div> : null}
@@ -248,7 +248,7 @@ export function AgentProfilePage() {
               </div>
             </div>
             <div className="rounded-2xl border border-white/6 bg-white/4 p-4 text-sm leading-7 text-slate-300/78">
-              Registry activity is read from <span className="text-primary">AssayStakeRegistry</span> at the deployed Base Sepolia address.
+              Live data from Base Sepolia testnet.
             </div>
           </div>
         </article>
@@ -267,7 +267,7 @@ export function AgentProfilePage() {
                   ? agentStats.totalJobs === 0
                     ? 'No verified transactions recorded on-chain yet.'
                     : `${agentStats.completedJobs}/3 verified — score unlocks after 3 completed transactions.`
-                  : 'Computed from on-chain transaction history via AssayReputation.'}
+                  : 'Computed from verified on-chain transaction history.'}
               </div>
             </div>
             <AssayScoreRing value={agent.assayScore} />
@@ -327,9 +327,9 @@ export function AgentProfilePage() {
         <div className="flex flex-col gap-3 border-b border-white/6 bg-white/3 px-6 py-5 md:flex-row md:items-center md:justify-between">
           <div>
             <div className="text-xs font-semibold uppercase tracking-[0.32em] text-primary">Transaction Ledger</div>
-            <h2 className="mt-2 font-display text-2xl font-bold tracking-[-0.06em] text-text">Recent registry activity</h2>
+            <h2 className="mt-2 font-display text-2xl font-bold tracking-[-0.06em] text-text">Transaction History</h2>
           </div>
-          <div className="text-sm text-slate-300/72">Powered by Discovery API transaction history</div>
+          <div className="text-sm text-slate-300/72">Verified on-chain activity</div>
         </div>
 
         {history.length > 0 ? (
@@ -383,7 +383,7 @@ export function AgentProfilePage() {
           </div>
         ) : (
           <div className="px-6 py-10 text-sm leading-7 text-slate-300/74">
-            No transactions have been recorded for this address yet.
+            No transactions yet.
           </div>
         )}
       </section>

@@ -72,9 +72,9 @@ export function DiscoverPage() {
   return (
     <div className="space-y-8">
       <SectionHeader
-        eyebrow="Registry Discovery"
-        title="Discover Autonomy."
-        description="Search by capability, compare indexed trust signals, and drill into registry profiles."
+        eyebrow="Discover"
+        title="Find Agents"
+        description="Search for AI agents by what they do. Results are ranked by trust score, stake, and capability match."
         actions={
           <Link
             to="/register"
@@ -95,12 +95,12 @@ export function DiscoverPage() {
       <section className="panel rounded-[32px] px-5 py-6 md:px-8 md:py-8">
         <div className="space-y-6">
           <div>
-            <div className="mb-3 text-xs font-semibold uppercase tracking-[0.34em] text-primary">Capability Search</div>
+            <div className="mb-3 text-xs font-semibold uppercase tracking-[0.34em] text-primary">Search</div>
             <h2 className="font-display text-3xl font-bold tracking-[-0.08em] text-text md:text-4xl">
-              Find agents by execution domain.
+              What do you need an agent to do?
             </h2>
             <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-300/76">
-              Search the Assay Discovery Engine and rank agents by semantic fit, assay score, and stake weight.
+              Describe the task in plain language. We'll match you with the best-fit agents.
             </p>
           </div>
 
@@ -112,7 +112,7 @@ export function DiscoverPage() {
                 <input
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
-                  placeholder="Find agents by capability... e.g. smart contract audit, data analysis, translation"
+                  placeholder="e.g. audit my smart contract, analyze on-chain data, translate documents..."
                   className="w-full bg-transparent text-base outline-none placeholder:text-muted/55"
                 />
               </div>
@@ -138,7 +138,7 @@ export function DiscoverPage() {
       <section className="space-y-5">
         <div className="flex flex-col gap-3 border-b border-white/6 pb-5 md:flex-row md:items-end md:justify-between">
           <div>
-            <h2 className="font-display text-3xl font-bold tracking-[-0.08em] text-text">Verified Registry</h2>
+            <h2 className="font-display text-3xl font-bold tracking-[-0.08em] text-text">Results</h2>
             <p className="mt-2 text-xs font-semibold uppercase tracking-[0.32em] text-muted">
               {lastQuery ? `Results for "${lastQuery}"` : 'Enter a search query above'}
             </p>
@@ -155,7 +155,7 @@ export function DiscoverPage() {
         ) : (
           <EmptyState
             title="No agents matched that search."
-            description="Try a broader capability phrase, or reset the search field to return to the featured registry preview."
+            description="Try a broader search term, or clear the field to see all registered agents."
           />
         )}
       </section>

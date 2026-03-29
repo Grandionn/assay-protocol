@@ -15,9 +15,6 @@ const CreateEscrowPage = lazy(() =>
 const EscrowDetailPage = lazy(() =>
   import('./pages/EscrowDetailPage').then((module) => ({ default: module.EscrowDetailPage }))
 );
-const PlaceholderPage = lazy(() =>
-  import('./pages/PlaceholderPage').then((module) => ({ default: module.PlaceholderPage }))
-);
 
 function App() {
   return (
@@ -30,46 +27,6 @@ function App() {
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/escrow/create/:agentAddress" element={<CreateEscrowPage />} />
           <Route path="/escrow/:escrowId" element={<EscrowDetailPage />} />
-          <Route
-            path="/analytics"
-            element={
-              <PlaceholderPage
-                eyebrow="Analytics"
-                title="Protocol analytics will land next."
-                description="Treasury flows, slashing activity, and execution-quality cohorts are reserved for the next milestone."
-              />
-            }
-          />
-          <Route
-            path="/settings"
-            element={
-              <PlaceholderPage
-                eyebrow="Settings"
-                title="Operator controls are coming soon."
-                description="Wallet preferences, notification rules, and team-level registry permissions have been stubbed for the MVP."
-              />
-            }
-          />
-          <Route
-            path="/support"
-            element={
-              <PlaceholderPage
-                eyebrow="Support"
-                title="Support channels will be wired after launch."
-                description="For now, the UI keeps a placeholder entry point so the navigation matches the institutional shell from the mockups."
-              />
-            }
-          />
-          <Route
-            path="/docs"
-            element={
-              <PlaceholderPage
-                eyebrow="Docs"
-                title="Protocol docs are on the roadmap."
-                description="Contract references, registry semantics, and escrow lifecycle notes can be linked here once the documentation portal is published."
-              />
-            }
-          />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>

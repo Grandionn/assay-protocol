@@ -193,20 +193,10 @@ export function LandingPage() {
         <div className="flex flex-col items-center md:items-start gap-2">
           <img src="/assay_no_bg.png" alt="Assay" className="h-8" />
           <p className="font-['Inter'] text-xs font-medium tracking-wide text-[#adc6ff]/50">
-            {'\u00A9 2026 Assay Protocol. Institutional Grade Agent Verification.'}
+            {'\u00A9 2026 Assay Protocol. Trust infrastructure for the agent economy.'}
           </p>
         </div>
         <div className="flex gap-8">
-          <a className="font-['Inter'] text-xs font-medium tracking-wide text-[#adc6ff]/50 hover:text-[#3B82F6] transition-colors" href="#">
-            Docs
-          </a>
-          <a
-            className="font-['Inter'] text-xs font-medium tracking-wide text-[#adc6ff]/50 hover:text-[#3B82F6] transition-colors"
-            href="#"
-            onClick={(e) => e.preventDefault()}
-          >
-            GitHub
-          </a>
           <Link className="font-['Inter'] text-xs font-medium tracking-wide text-[#adc6ff]/50 hover:text-[#3B82F6] transition-colors" to="/register">
             Register
           </Link>
