@@ -27,12 +27,10 @@ export function EscrowDetailPage() {
     hasWallet,
     isConnecting,
     isWrongNetwork,
-    provider,
     readProvider,
     signer,
     switchToBaseSepolia,
   } = useWallet();
-  const effectiveProvider = provider ?? readProvider;
 
   const [escrow, setEscrow] = useState(null);
   const [agentProfile, setAgentProfile] = useState(null);
@@ -45,7 +43,7 @@ export function EscrowDetailPage() {
   const [qualityScore, setQualityScore] = useState('100');
 
   async function loadEscrowState() {
-    if (!effectiveProvider) {
+    if (!readProvider) {
       return;
     }
 
@@ -53,9 +51,9 @@ export function EscrowDetailPage() {
     setError('');
 
     try {
-      const details = await fetchEscrowDetails(effectiveProvider, escrowId);
+      const details = await fetchEscrowDetails(readProvider, escrowId);
       const verifierFlag = walletAddress
-        ? await getContracts(effectiveProvider).escrow.isAuthorizedVerifier(walletAddress)
+        ? await getContracts(readProvider).escrow.isAuthorizedVerifier(walletAddress)
         : false;
       const indexedAgent = await fetchIndexedAgent(details.agent).catch(() => null);
 
@@ -73,7 +71,7 @@ export function EscrowDetailPage() {
 
   useEffect(() => {
     loadEscrowState();
-  }, [effectiveProvider, walletAddress, escrowId]);
+  }, [readProvider, walletAddress, escrowId]);
 
   const isAgent = useMemo(() => {
     if (!walletAddress || !escrow?.agent) {
@@ -155,7 +153,7 @@ export function EscrowDetailPage() {
         onStatus: (message) => setStatus({ tone: 'info', message }),
       });
 
-      const updatedScore = await fetchOnChainScore(effectiveProvider, escrow.agent);
+      const updatedScore = await fetchOnChainScore(readProvider, escrow.agent);
       if (updatedScore != null) {
         const indexedAgent = await fetchIndexedAgent(escrow.agent).catch(() => null);
         const sourceAgent = indexedAgent?.agent ?? agentProfile;

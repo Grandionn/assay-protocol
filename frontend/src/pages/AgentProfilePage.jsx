@@ -24,8 +24,7 @@ import { formatPercent, formatUsdc, formatUsdcCompact, truncateAddress } from '.
 
 export function AgentProfilePage() {
   const { address } = useParams();
-  const { provider, readProvider } = useWallet();
-  const effectiveProvider = provider ?? readProvider;
+  const { readProvider } = useWallet();
   const [agent, setAgent] = useState(null);
   const [agentStats, setAgentStats] = useState(null);
   const [history, setHistory] = useState([]);
@@ -48,9 +47,9 @@ export function AgentProfilePage() {
             }
             throw requestError;
           }),
-          fetchOnChainAgent(effectiveProvider, address).catch(() => null),
-          fetchOnChainScore(effectiveProvider, address).catch(() => null),
-          fetchAgentStats(effectiveProvider, address).catch(() => null),
+          fetchOnChainAgent(readProvider, address).catch(() => null),
+          fetchOnChainScore(readProvider, address).catch(() => null),
+          fetchAgentStats(readProvider, address).catch(() => null),
         ]);
 
         if (!indexedAgent && !onChainAgent) {
@@ -72,7 +71,7 @@ export function AgentProfilePage() {
         );
         let ledger = [];
         try {
-          ledger = await fetchAgentHistory(effectiveProvider, address);
+          ledger = await fetchAgentHistory(readProvider, address);
         } catch (historyError) {
           console.warn('Transaction ledger fetch failed:', historyError);
         }
@@ -101,7 +100,7 @@ export function AgentProfilePage() {
     return () => {
       ignore = true;
     };
-  }, [address, effectiveProvider]);
+  }, [address, readProvider]);
 
   async function handleCopyAddress() {
     if (!agent?.address || !navigator.clipboard) {
