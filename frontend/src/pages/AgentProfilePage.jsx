@@ -79,7 +79,7 @@ export function AgentProfilePage() {
             status: 'Confirmed',
             amount: tx.amount,
             amountLabel: tx.amount && tx.amount !== '0' ? formatUsdc(BigInt(tx.amount)) : 'Metadata',
-            timestampLabel: tx.timestamp ? formatDateTime(tx.timestamp) : 'Pending',
+            timestampLabel: tx.timestamp ? new Date(tx.timestamp).toLocaleString() : 'Pending',
             escrowId: tx.escrowId || null,
             blockNumber: 0,
           }));
