@@ -20,7 +20,7 @@ import { useWallet } from '../contexts/WalletContext';
 import { fetchAgentTransactions, fetchIndexedAgent } from '../lib/api';
 import { hydrateAgent } from '../lib/agent';
 import { fetchAgentStats, fetchOnChainAgent, fetchOnChainScore } from '../lib/contracts';
-import { formatPercent, formatUsdc, formatUsdcCompact, truncateAddress } from '../lib/format';
+import { formatDateTime, formatPercent, formatUsdc, formatUsdcCompact, truncateAddress } from '../lib/format';
 
 export function AgentProfilePage() {
   const { address } = useParams();
@@ -72,17 +72,26 @@ export function AgentProfilePage() {
         let ledger = [];
         try {
           const txs = await fetchAgentTransactions(address);
-          ledger = txs.map((tx) => ({
-            hash: tx.txHash,
-            method: tx.method,
-            label: tx.label,
-            status: 'Confirmed',
-            amount: tx.amount,
-            amountLabel: tx.amount && tx.amount !== '0' ? formatUsdc(BigInt(tx.amount)) : 'Metadata',
-            timestampLabel: tx.timestamp ? new Date(tx.timestamp).toLocaleString() : 'Pending',
-            escrowId: tx.escrowId || null,
-            blockNumber: 0,
-          }));
+          ledger = txs
+            .map((tx) => {
+              try {
+                return {
+                  hash: tx.txHash,
+                  method: tx.method,
+                  label: tx.label,
+                  status: 'Confirmed',
+                  amount: tx.amount,
+                  amountLabel: tx.amount && tx.amount !== '0' ? formatUsdc(BigInt(tx.amount)) : 'Metadata',
+                  timestampLabel: tx.timestamp ? formatDateTime(tx.timestamp) : 'Pending',
+                  escrowId: tx.escrowId || null,
+                  blockNumber: 0,
+                };
+              } catch (itemError) {
+                console.warn('Skipping malformed ledger row:', itemError);
+                return null;
+              }
+            })
+            .filter(Boolean);
         } catch (e) {
           console.warn('Ledger fetch failed:', e);
         }

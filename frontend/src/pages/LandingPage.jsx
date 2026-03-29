@@ -202,9 +202,8 @@ export function LandingPage() {
           </a>
           <a
             className="font-['Inter'] text-xs font-medium tracking-wide text-[#adc6ff]/50 hover:text-[#3B82F6] transition-colors"
-            href="https://github.com/Grandionn/assay-protocol"
-            target="_blank"
-            rel="noopener noreferrer"
+            href="#"
+            onClick={(e) => e.preventDefault()}
           >
             GitHub
           </a>
