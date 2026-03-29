@@ -23,9 +23,11 @@ export function CreateEscrowPage() {
     isConnecting,
     isWrongNetwork,
     provider,
+    readProvider,
     signer,
     switchToBaseSepolia,
   } = useWallet();
+  const effectiveProvider = provider ?? readProvider;
 
   const [agent, setAgent] = useState(null);
   const [error, setError] = useState('');
@@ -54,7 +56,7 @@ export function CreateEscrowPage() {
             }
             throw requestError;
           }),
-          fetchOnChainAgent(provider, agentAddress).catch(() => null),
+          fetchOnChainAgent(effectiveProvider, agentAddress).catch(() => null),
         ]);
 
         if (!indexedAgent && !onChainAgent) {
@@ -81,7 +83,7 @@ export function CreateEscrowPage() {
     return () => {
       ignore = true;
     };
-  }, [agentAddress, provider]);
+  }, [agentAddress, effectiveProvider]);
 
   const specHashPreview = useMemo(() => {
     const source = form.specText.trim();

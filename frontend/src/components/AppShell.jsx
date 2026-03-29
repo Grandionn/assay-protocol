@@ -1,13 +1,11 @@
-import { LayoutGrid, LineChart, ReceiptText, Settings } from 'lucide-react';
+import { LayoutGrid, ReceiptText } from 'lucide-react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { Navbar } from './Navbar';
 import { Sidebar } from './Sidebar';
 
 const mobileNavItems = [
-  { label: 'Dashboard', to: '/discover', icon: LayoutGrid },
-  { label: 'Registry', to: '/register', icon: ReceiptText },
-  { label: 'Analytics', to: '/analytics', icon: LineChart },
-  { label: 'Settings', to: '/settings', icon: Settings },
+  { label: 'Discover', to: '/discover', icon: LayoutGrid },
+  { label: 'Register', to: '/register', icon: ReceiptText },
 ];
 
 export function AppShell() {

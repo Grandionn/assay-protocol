@@ -28,9 +28,11 @@ export function EscrowDetailPage() {
     isConnecting,
     isWrongNetwork,
     provider,
+    readProvider,
     signer,
     switchToBaseSepolia,
   } = useWallet();
+  const effectiveProvider = provider ?? readProvider;
 
   const [escrow, setEscrow] = useState(null);
   const [agentProfile, setAgentProfile] = useState(null);
@@ -43,11 +45,7 @@ export function EscrowDetailPage() {
   const [qualityScore, setQualityScore] = useState('100');
 
   async function loadEscrowState() {
-    if (!provider) {
-      if (!hasWallet) {
-        setError('MetaMask is required to read Base Sepolia escrow state.');
-        setIsLoading(false);
-      }
+    if (!effectiveProvider) {
       return;
     }
 
@@ -55,9 +53,9 @@ export function EscrowDetailPage() {
     setError('');
 
     try {
-      const details = await fetchEscrowDetails(provider, escrowId);
+      const details = await fetchEscrowDetails(effectiveProvider, escrowId);
       const verifierFlag = walletAddress
-        ? await getContracts(provider).escrow.isAuthorizedVerifier(walletAddress)
+        ? await getContracts(effectiveProvider).escrow.isAuthorizedVerifier(walletAddress)
         : false;
       const indexedAgent = await fetchIndexedAgent(details.agent).catch(() => null);
 
@@ -75,7 +73,7 @@ export function EscrowDetailPage() {
 
   useEffect(() => {
     loadEscrowState();
-  }, [provider, walletAddress, escrowId]);
+  }, [effectiveProvider, walletAddress, escrowId]);
 
   const isAgent = useMemo(() => {
     if (!walletAddress || !escrow?.agent) {
@@ -157,7 +155,7 @@ export function EscrowDetailPage() {
         onStatus: (message) => setStatus({ tone: 'info', message }),
       });
 
-      const updatedScore = await fetchOnChainScore(provider, escrow.agent);
+      const updatedScore = await fetchOnChainScore(effectiveProvider, escrow.agent);
       if (updatedScore != null) {
         const indexedAgent = await fetchIndexedAgent(escrow.agent).catch(() => null);
         const sourceAgent = indexedAgent?.agent ?? agentProfile;

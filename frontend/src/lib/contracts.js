@@ -340,6 +340,7 @@ export async function fetchAgentHistory(provider, address) {
       escrowIds.map(async (escrowId) => {
         const logs = await escrow.queryFilter(escrow.filters.EscrowFunded(BigInt(escrowId)), DEPLOY_BLOCK);
         return logs.map((log) => ({
+          escrowId,
           hash: log.transactionHash,
           method: 'ESCROW_FUNDED',
           status: 'Confirmed',
@@ -358,6 +359,7 @@ export async function fetchAgentHistory(provider, address) {
       escrowIds.map(async (escrowId) => {
         const logs = await escrow.queryFilter(escrow.filters.DeliverableSubmitted(BigInt(escrowId)), DEPLOY_BLOCK);
         return logs.map((log) => ({
+          escrowId,
           hash: log.transactionHash,
           method: 'DELIVERABLE',
           status: 'Confirmed',
@@ -379,6 +381,7 @@ export async function fetchAgentHistory(provider, address) {
 
   const escrowRows = [
     ...createdLogs.map((log) => ({
+      escrowId: log.args.escrowId?.toString(),
       hash: log.transactionHash,
       method: 'ESCROW_CREATED',
       status: 'Confirmed',
@@ -389,6 +392,7 @@ export async function fetchAgentHistory(provider, address) {
     ...fundedGroupedLogs.flat(),
     ...deliverableGroupedLogs.flat(),
     ...settledLogs.map((log) => ({
+      escrowId: log.args.escrowId?.toString(),
       hash: log.transactionHash,
       method: 'ESCROW_SETTLED',
       status: 'Confirmed',

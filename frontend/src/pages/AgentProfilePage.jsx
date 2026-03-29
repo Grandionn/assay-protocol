@@ -333,6 +333,11 @@ export function AgentProfilePage() {
                     <td className="px-6 py-4">
                       <div className="font-semibold text-text">{row.method}</div>
                       <div className="text-xs text-muted">{row.label}</div>
+                      {row.escrowId ? (
+                        <Link to={`/escrow/${row.escrowId}`} className="text-xs text-primary hover:underline">
+                          View Escrow →
+                        </Link>
+                      ) : null}
                     </td>
                     <td className="px-6 py-4">
                       <span className="rounded-full border border-success/25 bg-success/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.28em] text-success">

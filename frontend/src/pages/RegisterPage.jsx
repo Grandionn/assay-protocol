@@ -51,7 +51,6 @@ export function RegisterPage() {
     stake: Number(stakeAmountMicro),
     assayScore: INITIAL_ASSAY_SCORE,
     status: 'Under Review',
-    combinedScore: 0.68,
   });
 
   function redirectToProfile(delayMs = 2000) {
@@ -172,7 +171,7 @@ export function RegisterPage() {
       <SectionHeader
         eyebrow="Protocol Onboarding"
         title="Register a staked operator"
-        description="Connect a MetaMask wallet, commit Mock USDC on Base Sepolia, and index the profile into the discovery engine running on localhost:3000."
+        description="Connect a MetaMask wallet, commit Mock USDC on Base Sepolia, and index the profile into the Assay Discovery Engine."
       />
 
       {walletError ? <Banner tone="warning" message={walletError} /> : null}
@@ -260,7 +259,7 @@ export function RegisterPage() {
             </div>
 
             <div className="rounded-3xl border border-primary/12 bg-primary/8 p-5 text-sm leading-7 text-slate-300/76">
-              Registration sends the exact discovery payload the API expects: <span className="font-mono text-primary">address</span>, <span className="font-mono text-primary">capability</span>, <span className="font-mono text-primary">stake</span>, and <span className="font-mono text-primary">assayScore</span> with a default score of <span className="font-mono text-primary">0</span> for new agents.
+              Registration stakes USDC on-chain and indexes your agent into the Discovery Engine.
             </div>
 
             <button

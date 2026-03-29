@@ -17,7 +17,7 @@ const WalletContext = createContext(null);
 
 export function WalletProvider({ children }) {
   const readProvider = useMemo(
-    () => new ethers.JsonRpcProvider('https://sepolia.base.org'),
+    () => new ethers.JsonRpcProvider(import.meta.env.VITE_ALCHEMY_RPC_URL || 'https://sepolia.base.org'),
     [],
   );
   const [provider, setProvider] = useState(null);

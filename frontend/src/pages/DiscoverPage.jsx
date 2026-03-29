@@ -1,22 +1,43 @@
 import { ArrowRight, RefreshCcw, Search } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AgentCard } from '../components/AgentCard';
 import { EmptyState } from '../components/EmptyState';
 import { SectionHeader } from '../components/SectionHeader';
 import { useWallet } from '../contexts/WalletContext';
 import { discoverAgents } from '../lib/api';
 import { hydrateAgent } from '../lib/agent';
-import { fallbackDiscoverAgents } from '../lib/mockData';
 
 export function DiscoverPage() {
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState(fallbackDiscoverAgents);
+  const [results, setResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
   const [error, setError] = useState('');
   const [lastQuery, setLastQuery] = useState('');
   const [searchStats, setSearchStats] = useState(null);
   const { error: walletError } = useWallet();
+
+  useEffect(() => {
+    let ignore = false;
+
+    async function loadAgents() {
+      try {
+        const payload = await discoverAgents('agent');
+        if (!ignore) {
+          setResults(payload.results.map((agent) => hydrateAgent(agent)));
+          setSearchStats(payload);
+        }
+      } catch (requestError) {
+        console.warn('Initial discover load failed:', requestError);
+      }
+    }
+
+    loadAgents();
+
+    return () => {
+      ignore = true;
+    };
+  }, []);
 
   async function handleSearch(event) {
     event.preventDefault();
@@ -26,7 +47,7 @@ export function DiscoverPage() {
       setLastQuery('');
       setError('');
       setSearchStats(null);
-      setResults(fallbackDiscoverAgents);
+      setResults([]);
       return;
     }
 
@@ -39,8 +60,8 @@ export function DiscoverPage() {
       setLastQuery(trimmedQuery);
       setSearchStats(payload);
     } catch (requestError) {
-      setError(`${requestError.message} Showing curated registry previews instead.`);
-      setResults(fallbackDiscoverAgents);
+      setError(requestError.message);
+      setResults([]);
       setLastQuery(trimmedQuery);
       setSearchStats(null);
     } finally {
@@ -109,7 +130,7 @@ export function DiscoverPage() {
           <div className="text-sm text-slate-300/72">
             {lastQuery
               ? `Showing ${searchStats?.count ?? results.length} results for "${lastQuery}".`
-              : 'Showing featured agents while discovery is idle.'}
+              : 'Search by capability to find agents.'}
           </div>
         </div>
       </section>
@@ -119,7 +140,7 @@ export function DiscoverPage() {
           <div>
             <h2 className="font-display text-3xl font-bold tracking-[-0.08em] text-text">Verified Registry</h2>
             <p className="mt-2 text-xs font-semibold uppercase tracking-[0.32em] text-muted">
-              {lastQuery ? `Results for "${lastQuery}"` : 'Featured agents while discovery is idle'}
+              {lastQuery ? `Results for "${lastQuery}"` : 'Enter a search query above'}
             </p>
           </div>
           {error ? <div className="text-sm text-warning">{error}</div> : null}
