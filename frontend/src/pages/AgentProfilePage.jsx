@@ -17,9 +17,9 @@ import { LoadingState } from '../components/LoadingState';
 import { SectionHeader } from '../components/SectionHeader';
 import { StatusBadge } from '../components/StatusBadge';
 import { useWallet } from '../contexts/WalletContext';
-import { fetchIndexedAgent } from '../lib/api';
+import { fetchAgentTransactions, fetchIndexedAgent } from '../lib/api';
 import { hydrateAgent } from '../lib/agent';
-import { fetchAgentHistory, fetchAgentStats, fetchOnChainAgent, fetchOnChainScore } from '../lib/contracts';
+import { fetchAgentStats, fetchOnChainAgent, fetchOnChainScore } from '../lib/contracts';
 import { formatPercent, formatUsdc, formatUsdcCompact, truncateAddress } from '../lib/format';
 
 export function AgentProfilePage() {
@@ -71,9 +71,20 @@ export function AgentProfilePage() {
         );
         let ledger = [];
         try {
-          ledger = await fetchAgentHistory(readProvider, address);
-        } catch (historyError) {
-          console.warn('Transaction ledger fetch failed:', historyError);
+          const txs = await fetchAgentTransactions(address);
+          ledger = txs.map((tx) => ({
+            hash: tx.txHash,
+            method: tx.method,
+            label: tx.label,
+            status: 'Confirmed',
+            amount: tx.amount,
+            amountLabel: tx.amount && tx.amount !== '0' ? formatUsdc(BigInt(tx.amount)) : 'Metadata',
+            timestampLabel: tx.timestamp ? formatDateTime(tx.timestamp) : 'Pending',
+            escrowId: tx.escrowId || null,
+            blockNumber: 0,
+          }));
+        } catch (e) {
+          console.warn('Ledger fetch failed:', e);
         }
 
         if (!ignore) {
@@ -309,7 +320,7 @@ export function AgentProfilePage() {
             <div className="text-xs font-semibold uppercase tracking-[0.32em] text-primary">Transaction Ledger</div>
             <h2 className="mt-2 font-display text-2xl font-bold tracking-[-0.06em] text-text">Recent registry activity</h2>
           </div>
-          <div className="text-sm text-slate-300/72">Powered by on-chain StakeRegistry and Escrow event history</div>
+          <div className="text-sm text-slate-300/72">Powered by Discovery API transaction history</div>
         </div>
 
         {history.length > 0 ? (
@@ -363,8 +374,7 @@ export function AgentProfilePage() {
           </div>
         ) : (
           <div className="px-6 py-10 text-sm leading-7 text-slate-300/74">
-            No registry transactions were resolved for this address yet. Connect MetaMask to let the page query Base
-            Sepolia logs directly from the injected provider.
+            No transactions have been recorded for this address yet.
           </div>
         )}
       </section>

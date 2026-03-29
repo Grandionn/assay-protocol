@@ -113,6 +113,7 @@ export function EscrowDetailPage() {
       await submitDeliverable({
         signer,
         escrowId: escrow.escrowId,
+        agentAddress: escrow.agent,
         deliverableHash: ethers.keccak256(ethers.toUtf8Bytes(deliverableText.trim())),
         onStatus: (message) => setStatus({ tone: 'info', message }),
       });
@@ -150,6 +151,7 @@ export function EscrowDetailPage() {
         escrowId: escrow.escrowId,
         success: true,
         qualityScore,
+        agentAddress: escrow.agent,
         onStatus: (message) => setStatus({ tone: 'info', message }),
       });
 

@@ -5,6 +5,7 @@ const cors = require('cors');
 const express = require('express');
 const agentsRouter   = require('./routes/agents');
 const discoverRouter = require('./routes/discover');
+const transactionsRouter = require('./routes/transactions');
 
 const app = express();
 
@@ -20,5 +21,6 @@ app.get('/health', (_req, res) => {
 // —— Routes ———————————————————————————————————————————————————————————————————
 app.use('/agents',   agentsRouter);
 app.use('/discover', discoverRouter);
+app.use('/transactions', transactionsRouter);
 
 module.exports = app;

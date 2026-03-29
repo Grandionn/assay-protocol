@@ -48,4 +48,34 @@ export async function registerIndexedAgent(payload) {
   return parseJsonResponse(response);
 }
 
+export async function recordTransaction({ agentAddress, txHash, method, label, amount, escrowId, timestamp }) {
+  const response = await fetch(`${API_BASE_URL}/transactions/record`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      agentAddress,
+      txHash,
+      method,
+      label,
+      amount,
+      escrowId,
+      timestamp,
+    }),
+  });
+
+  return parseJsonResponse(response);
+}
+
+export async function fetchAgentTransactions(address) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/transactions/${address}`);
+    const payload = await parseJsonResponse(response);
+    return payload.transactions ?? [];
+  } catch {
+    return [];
+  }
+}
+
 export { API_BASE_URL };

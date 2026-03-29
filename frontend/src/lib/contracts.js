@@ -3,6 +3,7 @@ import mockUsdcAbi from '../abi/MockUSDC.json';
 import stakeRegistryAbi from '../abi/AssayStakeRegistry.json';
 import escrowAbi from '../abi/AssayEscrow.json';
 import reputationAbi from '../abi/AssayReputation.json';
+import { recordTransaction } from './api';
 import { formatDateTime, formatUsdc } from './format';
 
 export const CONTRACT_ADDRESSES = {
@@ -103,6 +104,19 @@ export async function registerAgent({ signer, agentAddress, capability, stakeAmo
   const registerTx = await stakeRegistry.registerAgent(capability, stakeAmountMicro);
   const receipt = await registerTx.wait();
 
+  try {
+    await recordTransaction({
+      agentAddress,
+      txHash: receipt.hash ?? receipt.transactionHash,
+      method: 'REG_INIT',
+      label: 'Initial Stake',
+      amount: stakeAmountMicro.toString(),
+      timestamp: Math.floor(Date.now() / 1000),
+    });
+  } catch {
+    // Never block registration on ledger sync.
+  }
+
   return {
     stakeAmountMicro,
     receipt,
@@ -180,6 +194,20 @@ export async function createAndFundEscrow({ signer, agentAddress, paymentAmount,
     throw new Error('Escrow creation succeeded but the escrow ID could not be resolved from logs.');
   }
 
+  try {
+    await recordTransaction({
+      agentAddress,
+      txHash: createReceipt.hash ?? createReceipt.transactionHash,
+      method: 'ESCROW_CREATED',
+      label: 'Escrow Created',
+      amount: paymentMicro.toString(),
+      escrowId: escrowId?.toString(),
+      timestamp: Math.floor(Date.now() / 1000),
+    });
+  } catch {
+    // Never block escrow creation on ledger sync.
+  }
+
   onStatus?.('Step 3/3: Funding escrow...');
   let fundReceipt;
   try {
@@ -187,6 +215,20 @@ export async function createAndFundEscrow({ signer, agentAddress, paymentAmount,
     fundReceipt = await fundTx.wait();
   } catch (error) {
     throw new Error(formatEscrowStepError('Fund escrow', escrow, error));
+  }
+
+  try {
+    await recordTransaction({
+      agentAddress,
+      txHash: fundReceipt.hash ?? fundReceipt.transactionHash,
+      method: 'ESCROW_FUNDED',
+      label: 'Escrow Funded',
+      amount: paymentMicro.toString(),
+      escrowId: escrowId?.toString(),
+      timestamp: Math.floor(Date.now() / 1000),
+    });
+  } catch {
+    // Never block escrow funding on ledger sync.
   }
 
   return {
@@ -197,20 +239,50 @@ export async function createAndFundEscrow({ signer, agentAddress, paymentAmount,
   };
 }
 
-export async function submitDeliverable({ signer, escrowId, deliverableHash, onStatus }) {
+export async function submitDeliverable({ signer, escrowId, deliverableHash, agentAddress, onStatus }) {
   const { escrow } = getContracts(signer);
   onStatus?.('Submitting deliverable on-chain...');
   const tx = await escrow.submitDeliverable(BigInt(escrowId), deliverableHash);
   const receipt = await tx.wait();
+
+  try {
+    await recordTransaction({
+      agentAddress,
+      txHash: receipt.hash ?? receipt.transactionHash,
+      method: 'DELIVERABLE',
+      label: 'Deliverable Submitted',
+      amount: '0',
+      escrowId: BigInt(escrowId).toString(),
+      timestamp: Math.floor(Date.now() / 1000),
+    });
+  } catch {
+    // Never block deliverable submission on ledger sync.
+  }
+
   return { receipt };
 }
 
-export async function verifyAndSettle({ signer, escrowId, success = true, qualityScore = 100, onStatus }) {
+export async function verifyAndSettle({ signer, escrowId, success = true, qualityScore = 100, agentAddress, onStatus }) {
   const { escrow } = getContracts(signer);
   const normalizedQualityScore = Math.max(0, Math.min(100, Math.round(Number(qualityScore) || 0)));
   onStatus?.('Verifying and settling escrow...');
   const tx = await escrow.verifyAndSettle(BigInt(escrowId), success, BigInt(normalizedQualityScore));
   const receipt = await tx.wait();
+
+  try {
+    await recordTransaction({
+      agentAddress,
+      txHash: receipt.hash ?? receipt.transactionHash,
+      method: 'ESCROW_SETTLED',
+      label: 'Escrow Settled',
+      amount: '0',
+      escrowId: BigInt(escrowId).toString(),
+      timestamp: Math.floor(Date.now() / 1000),
+    });
+  } catch {
+    // Never block settlement on ledger sync.
+  }
+
   return { receipt };
 }
 
