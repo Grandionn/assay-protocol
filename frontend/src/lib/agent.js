@@ -15,8 +15,8 @@ const keywordGroups = [
 const namePrefixes = ['Securify', 'Vector', 'Sovereign', 'Atlas', 'Sentinel', 'Nova', 'Helix', 'Cinder'];
 const nameSuffixes = ['Ledger', 'Node', 'Relay', 'Grid', 'Engine', 'Prime', 'Vault', 'Signal'];
 
-export const MINIMUM_STAKE_USDC = 500;
-export const MINIMUM_STAKE_MICRO = 500_000_000;
+export const MINIMUM_STAKE_USDC = 10;
+export const MINIMUM_STAKE_MICRO = 10_000_000;
 
 export function extractCapabilityTags(capability) {
   const source = (capability ?? '').toLowerCase();

@@ -30,7 +30,7 @@ export function RegisterPage() {
     address: '',
     name: '',
     capability: '',
-    stakeAmount: '500',
+    stakeAmount: '10',
   });
   const [status, setStatus] = useState({ tone: '', message: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -247,7 +247,7 @@ export function RegisterPage() {
                     step="0.01"
                     value={form.stakeAmount}
                     onChange={(event) => setForm((current) => ({ ...current, stakeAmount: event.target.value }))}
-                    placeholder="500.00"
+                    placeholder="10.00"
                     className="w-full bg-transparent text-2xl font-semibold outline-none placeholder:text-muted/55"
                   />
                   <span className="rounded-xl border border-white/8 bg-white/5 px-3 py-2 text-xs font-semibold uppercase tracking-[0.26em] text-text">
@@ -255,7 +255,7 @@ export function RegisterPage() {
                   </span>
                 </div>
               </div>
-              <p className="mt-2 text-sm italic text-slate-300/68">Minimum stake required: 500 USDC.</p>
+              <p className="mt-2 text-sm italic text-slate-300/68">Minimum stake required: 10 USDC.</p>
             </div>
 
             <div className="rounded-3xl border border-primary/12 bg-primary/8 p-5 text-sm leading-7 text-slate-300/76">
