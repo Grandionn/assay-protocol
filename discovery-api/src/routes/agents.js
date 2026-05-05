@@ -1,4 +1,5 @@
 const express = require('express');
+const { ethers } = require('ethers');
 const { getEmbedding } = require('../embedder');
 const store = require('../vectorStore');
 
@@ -43,6 +44,30 @@ function validateRegisterPayload(payload) {
   };
 }
 
+function isScoreOnlyUpdatePayload(payload) {
+  if (!payload || typeof payload !== 'object') {
+    return false;
+  }
+
+  return (
+    Object.prototype.hasOwnProperty.call(payload, 'address') &&
+    Object.prototype.hasOwnProperty.call(payload, 'assayScore') &&
+    !Object.prototype.hasOwnProperty.call(payload, 'name') &&
+    !Object.prototype.hasOwnProperty.call(payload, 'capability') &&
+    !Object.prototype.hasOwnProperty.call(payload, 'stake')
+  );
+}
+
+function buildScoreOnlyUpdatePayload(payload, existingEntry) {
+  return validateRegisterPayload({
+    address: payload.address,
+    name: existingEntry?.metadata?.name,
+    capability: existingEntry?.metadata?.capability,
+    stake: existingEntry?.metadata?.stake,
+    assayScore: payload.assayScore,
+  });
+}
+
 async function registerAgentRecord(payload, options = {}) {
   const normalised = validateRegisterPayload(payload);
   const embeddingText = normalised.name
@@ -66,7 +91,37 @@ async function registerAgentRecord(payload, options = {}) {
 
 router.post('/register', async (req, res) => {
   try {
-    const result = await registerAgentRecord(req.body);
+    const rawAddress = typeof req.body?.address === 'string' ? req.body.address.trim().toLowerCase() : '';
+    const existingEntry = rawAddress ? await store.get(rawAddress) : null;
+    const isScoreOnlyUpdate = Boolean(existingEntry) && isScoreOnlyUpdatePayload(req.body);
+    const payload = isScoreOnlyUpdate
+      ? buildScoreOnlyUpdatePayload(req.body, existingEntry)
+      : validateRegisterPayload(req.body);
+
+    if (!isScoreOnlyUpdate) {
+      const { signature } = req.body ?? {};
+
+      if (!signature || typeof signature !== 'string') {
+        return res.status(401).json({ error: 'Signature is required to prove wallet ownership.' });
+      }
+
+      const message = `Assay: register ${payload.address.toLowerCase()}`;
+      let recoveredAddress;
+
+      try {
+        recoveredAddress = ethers.verifyMessage(message, signature);
+      } catch {
+        return res.status(401).json({ error: 'Invalid signature format.' });
+      }
+
+      if (recoveredAddress.toLowerCase() !== payload.address.toLowerCase()) {
+        return res.status(401).json({ error: 'Signature does not match the provided address.' });
+      }
+    }
+
+    const result = await registerAgentRecord(payload, {
+      registeredAt: existingEntry?.metadata?.registeredAt,
+    });
     return res.status(201).json(result);
   } catch (err) {
     if (err.status) {

@@ -163,9 +163,6 @@ export function EscrowDetailPage() {
         if (sourceAgent?.capability) {
           await registerIndexedAgent({
             address: escrow.agent,
-            name: sourceAgent.name?.trim?.() ?? sourceAgent.name ?? '',
-            capability: sourceAgent.capability,
-            stake: Number(sourceAgent.stake ?? 0),
             assayScore: updatedScore,
           }).catch(() => null);
         }

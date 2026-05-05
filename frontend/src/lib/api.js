@@ -36,6 +36,11 @@ export async function fetchIndexedAgent(address) {
   return parseJsonResponse(response);
 }
 
+export async function signRegistrationMessage(signer, address) {
+  const message = `Assay: register ${address.toLowerCase()}`;
+  return signer.signMessage(message);
+}
+
 export async function registerIndexedAgent(payload) {
   const response = await fetch(`${API_BASE_URL}/agents/register`, {
     method: 'POST',

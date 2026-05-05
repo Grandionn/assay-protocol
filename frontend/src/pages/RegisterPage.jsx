@@ -5,13 +5,15 @@ import { useNavigate } from 'react-router-dom';
 import { SectionHeader } from '../components/SectionHeader';
 import { StatusBadge } from '../components/StatusBadge';
 import { useWallet } from '../contexts/WalletContext';
-import { registerIndexedAgent } from '../lib/api';
+import { registerIndexedAgent, signRegistrationMessage } from '../lib/api';
 import { hydrateAgent, MINIMUM_STAKE_USDC } from '../lib/agent';
 import { parseWalletError, registerAgent } from '../lib/contracts';
 import { formatUsdcCompact, truncateAddress } from '../lib/format';
 
 const INITIAL_ASSAY_SCORE = 0;
 const INDEXING_WARNING_MESSAGE = 'On-chain registration succeeded but discovery indexing failed. Visit your profile to verify.';
+const SIGNATURE_DECLINED_MESSAGE = 'Agent registered on-chain but not indexed in Discovery — signature was declined.';
+const SIGNATURE_DECLINED_CODE = 'SIGNATURE_DECLINED';
 
 export function RegisterPage() {
   const navigate = useNavigate();
@@ -61,13 +63,23 @@ export function RegisterPage() {
     }, delayMs);
   }
 
-  async function attemptDiscoveryIndex({ address, name, capability, stakeMicro }) {
+  async function attemptDiscoveryIndex({ address, name, capability, stakeMicro, signer }) {
+    let signature;
+
+    try {
+      signature = await signRegistrationMessage(signer, address);
+    } catch (signatureError) {
+      signatureError.code = SIGNATURE_DECLINED_CODE;
+      throw signatureError;
+    }
+
     return registerIndexedAgent({
       address,
       name,
       capability,
       stake: Number(stakeMicro),
       assayScore: INITIAL_ASSAY_SCORE,
+      signature,
     });
   }
 
@@ -127,10 +139,15 @@ export function RegisterPage() {
           name: trimmedName,
           capability: trimmedCapability,
           stakeMicro: result.stakeAmountMicro,
+          signer,
         });
         setStatus({ tone: 'success', message: 'Agent registered and indexed successfully. Redirecting to the profile view.' });
-      } catch {
-        setStatus({ tone: 'warning', message: INDEXING_WARNING_MESSAGE });
+      } catch (indexError) {
+        if (indexError.code === SIGNATURE_DECLINED_CODE) {
+          setStatus({ tone: 'info', message: SIGNATURE_DECLINED_MESSAGE });
+        } else {
+          setStatus({ tone: 'warning', message: INDEXING_WARNING_MESSAGE });
+        }
       }
 
       redirectToProfile();
@@ -154,10 +171,15 @@ export function RegisterPage() {
           name: trimmedName,
           capability: trimmedCapability,
           stakeMicro: stakeAmountMicro,
+          signer,
         });
         setStatus({ tone: 'success', message: 'Profile indexed successfully. Redirecting to the profile view.' });
-      } catch {
-        setStatus({ tone: 'warning', message: INDEXING_WARNING_MESSAGE });
+      } catch (indexError) {
+        if (indexError.code === SIGNATURE_DECLINED_CODE) {
+          setStatus({ tone: 'info', message: SIGNATURE_DECLINED_MESSAGE });
+        } else {
+          setStatus({ tone: 'warning', message: INDEXING_WARNING_MESSAGE });
+        }
       }
 
       redirectToProfile();
