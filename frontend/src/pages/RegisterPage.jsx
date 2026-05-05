@@ -300,7 +300,7 @@ export function RegisterPage() {
 
                 <div className="mt-5 grid gap-3 sm:grid-cols-2">
                   <PreviewMetric label="Total Stake" value={formatUsdcCompact(Number(stakeAmountMicro))} />
-                  <PreviewMetric label="Initial Assay" value="0 / 10,000" />
+                  <PreviewMetric label="Initial Assay" value="0 / 1,000" />
                 </div>
 
                 <div className="mt-5 flex flex-wrap gap-2">

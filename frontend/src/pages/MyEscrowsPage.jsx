@@ -8,8 +8,6 @@ import { useWallet } from '../contexts/WalletContext';
 import { ESCROW_STATUS_LABELS, fetchEscrowDetails, getContracts } from '../lib/contracts';
 import { formatDateTime, formatUsdc, truncateAddress } from '../lib/format';
 
-const ESCROW_DEPLOY_BLOCK = 39_430_000;
-
 export function MyEscrowsPage() {
   const { address, readProvider, connectWallet, hasWallet } = useWallet();
   const [escrows, setEscrows] = useState([]);
@@ -34,31 +32,36 @@ export function MyEscrowsPage() {
 
       try {
         const { escrow } = getContracts(readProvider);
-        const [buyerLogs, agentLogs] = await Promise.all([
-          escrow.queryFilter(escrow.filters.EscrowCreated(null, address, null), ESCROW_DEPLOY_BLOCK),
-          escrow.queryFilter(escrow.filters.EscrowCreated(null, null, address), ESCROW_DEPLOY_BLOCK),
-        ]);
+        const nextId = await escrow.nextEscrowId();
+        const totalEscrows = Number(nextId);
 
-        const uniqueEscrowIds = new Map();
-
-        [...buyerLogs, ...agentLogs].forEach((log) => {
-          const escrowId = log.args?.escrowId;
-          if (escrowId != null) {
-            uniqueEscrowIds.set(escrowId.toString(), escrowId);
+        if (totalEscrows === 0) {
+          if (!ignore) {
+            setEscrows([]);
           }
-        });
+          return;
+        }
 
         const details = await Promise.all(
-          [...uniqueEscrowIds.values()].map((escrowId) => fetchEscrowDetails(readProvider, escrowId)),
+          Array.from({ length: totalEscrows }, (_, index) =>
+            fetchEscrowDetails(readProvider, index).catch(() => null),
+          ),
         );
 
-        const sortedEscrows = details.sort((left, right) => {
-          if (left.escrowId === right.escrowId) {
-            return 0;
-          }
+        const normalizedAddress = address.toLowerCase();
+        const sortedEscrows = details
+          .filter(Boolean)
+          .filter(
+            (item) =>
+              item.buyer.toLowerCase() === normalizedAddress || item.agent.toLowerCase() === normalizedAddress,
+          )
+          .sort((left, right) => {
+            if (left.escrowId === right.escrowId) {
+              return 0;
+            }
 
-          return left.escrowId > right.escrowId ? -1 : 1;
-        });
+            return left.escrowId > right.escrowId ? -1 : 1;
+          });
 
         if (!ignore) {
           setEscrows(sortedEscrows);
