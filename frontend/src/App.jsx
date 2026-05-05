@@ -10,6 +10,7 @@ const AgentProfilePage = lazy(() =>
   import('./pages/AgentProfilePage').then((module) => ({ default: module.AgentProfilePage }))
 );
 const RegisterPage = lazy(() => import('./pages/RegisterPage').then((module) => ({ default: module.RegisterPage })));
+const MyEscrowsPage = lazy(() => import('./pages/MyEscrowsPage').then((module) => ({ default: module.MyEscrowsPage })));
 const CreateEscrowPage = lazy(() =>
   import('./pages/CreateEscrowPage').then((module) => ({ default: module.CreateEscrowPage }))
 );
@@ -27,6 +28,7 @@ function App() {
             <Route path="/discover" element={<DiscoverPage />} />
             <Route path="/agent/:address" element={<AgentProfilePage />} />
             <Route path="/register" element={<RegisterPage />} />
+            <Route path="/escrows" element={<MyEscrowsPage />} />
             <Route path="/escrow/create/:agentAddress" element={<CreateEscrowPage />} />
             <Route path="/escrow/:escrowId" element={<EscrowDetailPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />

@@ -1,4 +1,4 @@
-import { LayoutGrid, ReceiptText } from 'lucide-react';
+import { FileText, LayoutGrid, ReceiptText } from 'lucide-react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { Navbar } from './Navbar';
 import { Sidebar } from './Sidebar';
@@ -6,6 +6,7 @@ import { Sidebar } from './Sidebar';
 const mobileNavItems = [
   { label: 'Discover', to: '/discover', icon: LayoutGrid },
   { label: 'Register', to: '/register', icon: ReceiptText },
+  { label: 'My Escrows', to: '/escrows', icon: FileText },
 ];
 
 export function AppShell() {

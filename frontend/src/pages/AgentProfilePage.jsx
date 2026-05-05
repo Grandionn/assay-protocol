@@ -260,7 +260,7 @@ export function AgentProfilePage() {
             <div>
               <div className="text-xs font-semibold uppercase tracking-[0.32em] text-muted">Assay Score</div>
               <div className="mt-4 font-display text-5xl font-bold tracking-[-0.1em] text-primary">
-                {agent.assayScore.toLocaleString()}
+                {Math.round(agent.assayScore / 10).toLocaleString()}
               </div>
               <div className="mt-3 max-w-xs text-sm leading-7 text-slate-300/74">
                 {agent.assayScore === 0 && agentStats

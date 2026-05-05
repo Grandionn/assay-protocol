@@ -1,4 +1,5 @@
 import {
+  FileText,
   LayoutGrid,
   ReceiptText,
 } from 'lucide-react';
@@ -7,6 +8,7 @@ import { NavLink } from 'react-router-dom';
 const primaryItems = [
   { label: 'Discover', to: '/discover', icon: LayoutGrid },
   { label: 'Register', to: '/register', icon: ReceiptText },
+  { label: 'My Escrows', to: '/escrows', icon: FileText },
 ];
 
 export function Sidebar() {

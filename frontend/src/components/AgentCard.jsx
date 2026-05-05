@@ -72,7 +72,7 @@ export function AgentCard({ agent }) {
         <div className="space-y-2">
           <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-[0.28em] text-muted">
             <span>Assay Score</span>
-            <span className="text-primary">{agent.assayScore.toLocaleString()} / 10,000</span>
+            <span className="text-primary">{Math.round(agent.assayScore / 10).toLocaleString()} / 1,000</span>
           </div>
           <div className="h-2 overflow-hidden rounded-full bg-white/6">
             <div className="h-full rounded-full bg-electric-blue" style={{ width: `${scorePercent}%` }} />

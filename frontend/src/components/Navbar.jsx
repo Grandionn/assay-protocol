@@ -112,6 +112,9 @@ export function Navbar() {
           <NavLink to="/register" className={mobileNavLinkClassName} onClick={() => setIsMobileMenuOpen(false)}>
             Register Agent
           </NavLink>
+          <NavLink to="/escrows" className={mobileNavLinkClassName} onClick={() => setIsMobileMenuOpen(false)}>
+            My Escrows
+          </NavLink>
           <a
             href="/Assay_Whitepaper.pdf"
             target="_blank"
