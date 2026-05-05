@@ -3,17 +3,17 @@
   "version": "1.0.0",
   "description": "Trust infrastructure for the AI agent economy — smart contracts on Base",
   "scripts": {
-    "compile":         "hardhat compile",
-    "test":            "hardhat test",
-    "deploy:testnet":  "hardhat run scripts/deploy.js --network baseSepolia",
-    "deploy:mainnet":  "hardhat run scripts/deploy.js --network base",
-    "verify":          "hardhat verify",
-    "clean":           "hardhat clean"
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "deploy:testnet": "hardhat run scripts/deploy.js --network baseSepolia",
+    "deploy:mainnet": "hardhat run scripts/deploy.js --network base",
+    "verify": "hardhat verify",
+    "clean": "hardhat clean"
   },
   "devDependencies": {
-    "@nomicfoundation/hardhat-toolbox": "^4.0.0",
-    "hardhat": "^2.22.0",
-    "dotenv": "^16.4.5"
+    "@nomicfoundation/hardhat-toolbox": "^6.1.2",
+    "dotenv": "^16.4.5",
+    "hardhat": "^2.22.0"
   },
   "dependencies": {
     "@openzeppelin/contracts": "^5.1.0"

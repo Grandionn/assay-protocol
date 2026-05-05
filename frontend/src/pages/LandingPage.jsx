@@ -197,6 +197,14 @@ export function LandingPage() {
           </p>
         </div>
         <div className="flex gap-8">
+          <a
+            className="font-['Inter'] text-xs font-medium tracking-wide text-[#adc6ff]/50 hover:text-[#3B82F6] transition-colors"
+            href="/Assay_Whitepaper.pdf"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Whitepaper
+          </a>
           <Link className="font-['Inter'] text-xs font-medium tracking-wide text-[#adc6ff]/50 hover:text-[#3B82F6] transition-colors" to="/register">
             Register
           </Link>

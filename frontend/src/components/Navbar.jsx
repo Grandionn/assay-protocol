@@ -1,9 +1,11 @@
-import { LoaderCircle, Wallet } from 'lucide-react';
+import { LoaderCircle, Menu, Wallet, X } from 'lucide-react';
+import { useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { useWallet } from '../contexts/WalletContext';
 import { truncateAddress } from '../lib/format';
 
 export function Navbar() {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const {
     address,
     chainLabel,
@@ -15,6 +17,16 @@ export function Navbar() {
   } = useWallet();
 
   const connected = Boolean(address);
+  const navLinkClassName = ({ isActive }) =>
+    [
+      'border-b-2 pb-1 text-sm font-semibold tracking-tight transition',
+      isActive ? 'border-primary text-primary' : 'border-transparent text-muted hover:text-text',
+    ].join(' ');
+  const mobileNavLinkClassName = ({ isActive }) =>
+    [
+      'block w-full px-6 py-3 text-sm font-semibold tracking-tight transition',
+      isActive ? 'text-primary' : 'text-muted hover:text-text',
+    ].join(' ');
 
   return (
     <header className="fixed inset-x-0 top-0 z-50 border-b border-white/5 bg-background/78 backdrop-blur-xl">
@@ -24,32 +36,26 @@ export function Navbar() {
             <img src="/assay_no_bg.png" alt="Assay" className="h-8" />
           </Link>
           <div className="hidden items-center gap-5 md:flex">
-            <NavLink
-              to="/discover"
-              className={({ isActive }) =>
-                [
-                  'border-b-2 pb-1 text-sm font-semibold tracking-tight transition',
-                  isActive ? 'border-primary text-primary' : 'border-transparent text-muted hover:text-text',
-                ].join(' ')
-              }
-            >
+            <NavLink to="/discover" className={navLinkClassName}>
               Discover Agents
             </NavLink>
-            <NavLink
-              to="/register"
-              className={({ isActive }) =>
-                [
-                  'border-b-2 pb-1 text-sm font-semibold tracking-tight transition',
-                  isActive ? 'border-primary text-primary' : 'border-transparent text-muted hover:text-text',
-                ].join(' ')
-              }
-            >
+            <NavLink to="/register" className={navLinkClassName}>
               Register Agent
             </NavLink>
           </div>
         </div>
 
         <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setIsMobileMenuOpen((open) => !open)}
+            className="text-muted transition hover:text-text md:hidden"
+            aria-label={isMobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
+            aria-expanded={isMobileMenuOpen}
+          >
+            {isMobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
+          </button>
+
           {chainLabel ? (
             <div
               className={[
@@ -91,6 +97,26 @@ export function Navbar() {
           )}
         </div>
       </div>
+
+      {isMobileMenuOpen ? (
+        <div className="border-t border-white/10 bg-background/78 backdrop-blur-xl md:hidden">
+          <NavLink to="/discover" className={mobileNavLinkClassName} onClick={() => setIsMobileMenuOpen(false)}>
+            Discover Agents
+          </NavLink>
+          <NavLink to="/register" className={mobileNavLinkClassName} onClick={() => setIsMobileMenuOpen(false)}>
+            Register Agent
+          </NavLink>
+          <a
+            href="/Assay_Whitepaper.pdf"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block w-full px-6 py-3 text-sm font-semibold tracking-tight text-muted transition hover:text-text"
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+            Whitepaper
+          </a>
+        </div>
+      ) : null}
     </header>
   );
 }
