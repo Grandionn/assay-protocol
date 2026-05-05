@@ -27,6 +27,17 @@ export function Navbar() {
       'block w-full px-6 py-3 text-sm font-semibold tracking-tight transition',
       isActive ? 'text-primary' : 'text-muted hover:text-text',
     ].join(' ');
+  const badgeClassName = [
+    'rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.32em]',
+    isWrongNetwork ? 'border-warning/30 bg-warning/10 text-warning' : 'border-primary/20 bg-primary/10 text-primary',
+  ].join(' ');
+  const connectedButtonClassName = [
+    'flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-semibold transition',
+    isWrongNetwork
+      ? 'border-warning/30 bg-warning/10 text-warning hover:border-warning/50'
+      : 'border-primary/20 bg-primary/10 text-primary hover:border-primary/40',
+  ].join(' ');
+  const walletButtonLabel = isConnecting ? 'Connecting' : hasWallet ? 'Connect Wallet' : 'MetaMask Required';
 
   return (
     <header className="fixed inset-x-0 top-0 z-50 border-b border-white/5 bg-background/78 backdrop-blur-xl">
@@ -58,12 +69,7 @@ export function Navbar() {
 
           {chainLabel ? (
             <div
-              className={[
-                'hidden rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.32em] md:block',
-                isWrongNetwork
-                  ? 'border-warning/30 bg-warning/10 text-warning'
-                  : 'border-primary/20 bg-primary/10 text-primary',
-              ].join(' ')}
+              className={`hidden md:block ${badgeClassName}`}
             >
               {chainLabel}
             </div>
@@ -73,12 +79,7 @@ export function Navbar() {
             <button
               type="button"
               onClick={isWrongNetwork ? switchToBaseSepolia : undefined}
-              className={[
-                'flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-semibold transition',
-                isWrongNetwork
-                  ? 'border-warning/30 bg-warning/10 text-warning hover:border-warning/50'
-                  : 'border-primary/20 bg-primary/10 text-primary hover:border-primary/40',
-              ].join(' ')}
+              className={`hidden md:flex ${connectedButtonClassName}`}
             >
               <Wallet size={16} />
               {isWrongNetwork ? 'Switch Network' : truncateAddress(address)}
@@ -88,18 +89,23 @@ export function Navbar() {
               type="button"
               onClick={connectWallet}
               disabled={isConnecting}
-              className="electric-button inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold uppercase tracking-[0.22em] transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-70"
+              className="electric-button hidden items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold uppercase tracking-[0.22em] transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-70 md:inline-flex"
               title={hasWallet ? 'Connect MetaMask' : 'MetaMask is required for wallet actions'}
             >
               {isConnecting ? <LoaderCircle size={16} className="animate-spin" /> : <Wallet size={16} />}
-              {isConnecting ? 'Connecting' : hasWallet ? 'Connect Wallet' : 'MetaMask Required'}
+              {walletButtonLabel}
             </button>
           )}
         </div>
       </div>
 
-      {isMobileMenuOpen ? (
-        <div className="border-t border-white/10 bg-background/78 backdrop-blur-xl md:hidden">
+      <div
+        className={[
+          'overflow-hidden transition-all duration-200 ease-out md:hidden',
+          isMobileMenuOpen ? 'max-h-[420px] opacity-100' : 'max-h-0 opacity-0 pointer-events-none',
+        ].join(' ')}
+      >
+        <div className="border-t border-white/10 bg-background/78 backdrop-blur-xl">
           <NavLink to="/discover" className={mobileNavLinkClassName} onClick={() => setIsMobileMenuOpen(false)}>
             Discover Agents
           </NavLink>
@@ -115,8 +121,45 @@ export function Navbar() {
           >
             Whitepaper
           </a>
+          <div className="mx-6 my-2 border-t border-white/10" />
+          {chainLabel ? (
+            <div className="px-6 pb-3">
+              <div className={`inline-flex ${badgeClassName}`}>{chainLabel}</div>
+            </div>
+          ) : null}
+          <div className="px-6 pb-4">
+            {connected ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  if (isWrongNetwork) {
+                    switchToBaseSepolia();
+                  }
+                }}
+                className={`flex w-full items-center justify-center ${connectedButtonClassName}`}
+              >
+                <Wallet size={16} />
+                {isWrongNetwork ? 'Switch Network' : truncateAddress(address)}
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  connectWallet();
+                }}
+                disabled={isConnecting}
+                className="electric-button inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold uppercase tracking-[0.22em] transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-70"
+                title={hasWallet ? 'Connect MetaMask' : 'MetaMask is required for wallet actions'}
+              >
+                {isConnecting ? <LoaderCircle size={16} className="animate-spin" /> : <Wallet size={16} />}
+                {walletButtonLabel}
+              </button>
+            )}
+          </div>
         </div>
-      ) : null}
+      </div>
     </header>
   );
 }
