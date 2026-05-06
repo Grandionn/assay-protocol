@@ -115,6 +115,11 @@ export function Navbar() {
           <NavLink to="/escrows" className={mobileNavLinkClassName} onClick={() => setIsMobileMenuOpen(false)}>
             My Escrows
           </NavLink>
+          {address ? (
+            <NavLink to={`/agent/${address}`} className={mobileNavLinkClassName} onClick={() => setIsMobileMenuOpen(false)}>
+              My Agent
+            </NavLink>
+          ) : null}
           <a
             href="/Assay_Whitepaper.pdf"
             target="_blank"

@@ -2,8 +2,8 @@ import { Wallet } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { EmptyState } from '../components/EmptyState';
-import { LoadingState } from '../components/LoadingState';
 import { SectionHeader } from '../components/SectionHeader';
+import { SkeletonCard } from '../components/Skeleton';
 import { useWallet } from '../contexts/WalletContext';
 import { ESCROW_STATUS_LABELS, fetchEscrowDetails, getContracts } from '../lib/contracts';
 import { formatDateTime, formatUsdc, truncateAddress } from '../lib/format';
@@ -124,7 +124,13 @@ export function MyEscrowsPage() {
 
       {error ? <div className="rounded-2xl border border-danger/25 bg-danger/10 px-4 py-3 text-sm text-danger">{error}</div> : null}
 
-      {isLoading ? <LoadingState label="Loading Escrows" /> : null}
+      {isLoading ? (
+        <div className="space-y-4">
+          {Array.from({ length: 3 }).map((_, index) => (
+            <SkeletonCard key={index} />
+          ))}
+        </div>
+      ) : null}
 
       {!isLoading && !error && escrows.length === 0 ? (
         <EmptyState

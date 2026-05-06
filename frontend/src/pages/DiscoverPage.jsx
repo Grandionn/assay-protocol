@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { AgentCard } from '../components/AgentCard';
 import { EmptyState } from '../components/EmptyState';
 import { SectionHeader } from '../components/SectionHeader';
+import { SkeletonCard } from '../components/Skeleton';
 import { useWallet } from '../contexts/WalletContext';
 import { discoverAgents } from '../lib/api';
 import { hydrateAgent } from '../lib/agent';
@@ -15,12 +16,15 @@ export function DiscoverPage() {
   const [error, setError] = useState('');
   const [lastQuery, setLastQuery] = useState('');
   const [searchStats, setSearchStats] = useState(null);
+  const [isLoadingResults, setIsLoadingResults] = useState(true);
   const { error: walletError } = useWallet();
 
   useEffect(() => {
     let ignore = false;
 
     async function loadAgents() {
+      setIsLoadingResults(true);
+
       try {
         const payload = await discoverAgents('agent');
         if (!ignore) {
@@ -29,6 +33,10 @@ export function DiscoverPage() {
         }
       } catch (requestError) {
         console.warn('Initial discover load failed:', requestError);
+      } finally {
+        if (!ignore) {
+          setIsLoadingResults(false);
+        }
       }
     }
 
@@ -48,11 +56,13 @@ export function DiscoverPage() {
       setError('');
       setSearchStats(null);
       setResults([]);
+      setIsLoadingResults(false);
       return;
     }
 
     try {
       setIsSearching(true);
+      setIsLoadingResults(true);
       setError('');
       const payload = await discoverAgents(trimmedQuery);
       const hydrated = payload.results.map((agent) => hydrateAgent(agent));
@@ -66,6 +76,7 @@ export function DiscoverPage() {
       setSearchStats(null);
     } finally {
       setIsSearching(false);
+      setIsLoadingResults(false);
     }
   }
 
@@ -146,7 +157,13 @@ export function DiscoverPage() {
           {error ? <div className="text-sm text-warning">{error}</div> : null}
         </div>
 
-        {results.length > 0 ? (
+        {isLoadingResults ? (
+          <div className="grid gap-6 lg:grid-cols-2 2xl:grid-cols-3">
+            {Array.from({ length: 3 }).map((_, index) => (
+              <SkeletonCard key={index} />
+            ))}
+          </div>
+        ) : results.length > 0 ? (
           <div className="grid gap-6 lg:grid-cols-2 2xl:grid-cols-3">
             {results.map((agent) => (
               <AgentCard key={agent.address} agent={agent} />

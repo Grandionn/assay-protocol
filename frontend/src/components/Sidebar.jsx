@@ -2,8 +2,10 @@ import {
   FileText,
   LayoutGrid,
   ReceiptText,
+  User,
 } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
+import { useWallet } from '../contexts/WalletContext';
 
 const primaryItems = [
   { label: 'Discover', to: '/discover', icon: LayoutGrid },
@@ -12,6 +14,8 @@ const primaryItems = [
 ];
 
 export function Sidebar() {
+  const { address } = useWallet();
+
   return (
     <aside className="fixed bottom-0 left-0 top-[72px] hidden w-20 border-r border-white/5 bg-surface/88 px-3 py-6 backdrop-blur-xl md:flex xl:w-72 xl:px-5">
       <div className="flex h-full w-full flex-col">
@@ -37,6 +41,25 @@ export function Sidebar() {
               </NavLink>
             );
           })}
+
+          {address ? <div className="my-4 border-t border-white/5" /> : null}
+
+          {address ? (
+            <NavLink
+              to={`/agent/${address}`}
+              className={({ isActive }) =>
+                [
+                  'flex items-center gap-3 rounded-2xl border px-4 py-3 text-sm font-semibold transition xl:px-4',
+                  isActive
+                    ? 'translate-x-1 border-primary/45 bg-primary/12 text-primary'
+                    : 'border-transparent bg-transparent text-muted hover:border-white/5 hover:bg-white/3 hover:text-text',
+                ].join(' ')
+              }
+            >
+              <User size={18} />
+              <span className="hidden xl:block">My Agent</span>
+            </NavLink>
+          ) : null}
         </nav>
       </div>
     </aside>

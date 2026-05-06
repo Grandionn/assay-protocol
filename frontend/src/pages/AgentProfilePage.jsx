@@ -13,8 +13,8 @@ import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { AssayScoreRing } from '../components/AssayScoreRing';
 import { EmptyState } from '../components/EmptyState';
-import { LoadingState } from '../components/LoadingState';
 import { SectionHeader } from '../components/SectionHeader';
+import { SkeletonCard, SkeletonLine, SkeletonScoreRing } from '../components/Skeleton';
 import { StatusBadge } from '../components/StatusBadge';
 import { useWallet } from '../contexts/WalletContext';
 import { fetchAgentTransactions, fetchIndexedAgent } from '../lib/api';
@@ -133,7 +133,29 @@ export function AgentProfilePage() {
   }
 
   if (isLoading) {
-    return <LoadingState label="Loading Agent Profile" />;
+    return (
+      <div className="space-y-8">
+        <div className="space-y-4">
+          <SkeletonLine width="w-1/3" height="h-8" />
+          <SkeletonLine width="w-1/2" />
+        </div>
+
+        <section className="grid gap-6 lg:grid-cols-4">
+          <article className="panel rounded-[32px] p-6 md:col-span-2">
+            <div className="flex flex-col gap-8 md:flex-row md:items-center md:justify-between">
+              <div className="space-y-4">
+                <SkeletonLine width="w-1/3" />
+                <SkeletonLine width="w-1/4" height="h-12" />
+                <SkeletonLine width="w-2/3" />
+              </div>
+              <SkeletonScoreRing />
+            </div>
+          </article>
+          <SkeletonCard />
+          <SkeletonCard />
+        </section>
+      </div>
+    );
   }
 
   if (!agent) {

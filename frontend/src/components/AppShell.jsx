@@ -1,5 +1,6 @@
-import { FileText, LayoutGrid, ReceiptText } from 'lucide-react';
+import { FileText, LayoutGrid, ReceiptText, User } from 'lucide-react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
+import { useWallet } from '../contexts/WalletContext';
 import { Navbar } from './Navbar';
 import { Sidebar } from './Sidebar';
 
@@ -11,6 +12,7 @@ const mobileNavItems = [
 
 export function AppShell() {
   const location = useLocation();
+  const { address } = useWallet();
   const isLandingPage = location.pathname === '/';
 
   return (
@@ -42,6 +44,22 @@ export function AppShell() {
                   </NavLink>
                 );
               })}
+              {address ? (
+                <NavLink
+                  to={`/agent/${address}`}
+                  className={({ isActive }) =>
+                    [
+                      'flex min-w-fit items-center gap-2 rounded-xl border px-3 py-2 text-xs font-semibold uppercase tracking-[0.24em] transition',
+                      isActive
+                        ? 'border-primary/50 bg-primary/12 text-primary'
+                        : 'border-white/5 bg-white/2 text-muted hover:border-primary/20 hover:text-text',
+                    ].join(' ')
+                  }
+                >
+                  <User size={14} />
+                  My Agent
+                </NavLink>
+              ) : null}
             </div>
           ) : null}
           <Outlet />
