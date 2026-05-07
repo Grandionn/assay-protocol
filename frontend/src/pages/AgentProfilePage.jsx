@@ -369,8 +369,8 @@ export function AgentProfilePage() {
               </thead>
               <tbody>
                 {history.slice(0, 8).map((row) => (
-                  <tr key={`${row.hash}-${row.method}`} className="border-b border-white/5 text-sm text-slate-200/88">
-                    <td className="px-6 py-4 font-mono text-primary">{truncateAddress(row.hash, 10, 6)}</td>
+                  <tr key={`${row.hash ?? row.timestamp ?? row.method}-${row.method}-${row.escrowId ?? 'none'}`} className="border-b border-white/5 text-sm text-slate-200/88">
+                    <td className="px-6 py-4 font-mono text-primary">{row.hash ? truncateAddress(row.hash, 10, 6) : 'Direct Read'}</td>
                     <td className="px-6 py-4">
                       <div className="font-semibold text-text">{row.method}</div>
                       <div className="text-xs text-muted">{row.label}</div>
@@ -388,15 +388,19 @@ export function AgentProfilePage() {
                     <td className="px-6 py-4">{row.amountLabel}</td>
                     <td className="px-6 py-4 text-slate-300/74">{row.timestampLabel}</td>
                     <td className="px-6 py-4 text-right">
-                      <a
-                        href={`https://sepolia.basescan.org/tx/${row.hash}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex items-center gap-2 text-primary transition hover:text-sky-200"
-                      >
-                        Open
-                        <ExternalLink size={14} />
-                      </a>
+                      {row.hash ? (
+                        <a
+                          href={`https://sepolia.basescan.org/tx/${row.hash}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-2 text-primary transition hover:text-sky-200"
+                        >
+                          Open
+                          <ExternalLink size={14} />
+                        </a>
+                      ) : (
+                        <span className="text-xs text-muted">Unavailable</span>
+                      )}
                     </td>
                   </tr>
                 ))}

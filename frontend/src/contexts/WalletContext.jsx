@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { ethers } from 'ethers';
+import { getContracts } from '../lib/contracts';
 
 const BASE_SEPOLIA = {
   chainId: '0x14A34',
@@ -25,6 +26,7 @@ export function WalletProvider({ children }) {
   const [address, setAddress] = useState('');
   const [chainId, setChainId] = useState(null);
   const [isConnecting, setIsConnecting] = useState(false);
+  const [isRegisteredAgent, setIsRegisteredAgent] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -75,6 +77,37 @@ export function WalletProvider({ children }) {
       window.ethereum.removeListener('chainChanged', handleChainChanged);
     };
   }, []);
+
+  useEffect(() => {
+    let ignore = false;
+
+    const checkAgentRegistration = async () => {
+      if (!address || !readProvider) {
+        if (!ignore) {
+          setIsRegisteredAgent(false);
+        }
+        return;
+      }
+
+      try {
+        const { stakeRegistry } = getContracts(readProvider);
+        const active = await stakeRegistry.isActive(address);
+        if (!ignore) {
+          setIsRegisteredAgent(Boolean(active));
+        }
+      } catch {
+        if (!ignore) {
+          setIsRegisteredAgent(false);
+        }
+      }
+    };
+
+    checkAgentRegistration();
+
+    return () => {
+      ignore = true;
+    };
+  }, [address, readProvider]);
 
   async function connectWallet() {
     if (!window.ethereum) {
@@ -135,6 +168,7 @@ export function WalletProvider({ children }) {
     chainLabel: chainId ? (chainId === 84532 ? 'Base Sepolia' : `Chain ${chainId}`) : '',
     isWrongNetwork: Boolean(chainId) && chainId !== 84532,
     isConnecting,
+    isRegisteredAgent,
     connectWallet,
     switchToBaseSepolia,
     hasWallet: Boolean(window.ethereum),

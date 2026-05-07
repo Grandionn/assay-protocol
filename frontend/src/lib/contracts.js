@@ -384,114 +384,171 @@ export async function fetchAgentHistory(provider, address) {
   }
 
   const { escrow, stakeRegistry } = getContracts(provider);
+  const normalizedAddress = address.toLowerCase();
 
   const registryGroupedLogs = await Promise.all(
     EVENT_MAPPERS.map(async (eventMapper) => {
-      const logs = await stakeRegistry.queryFilter(eventMapper.filter(stakeRegistry, address), DEPLOY_BLOCK);
-      return logs.map((log) => ({
-        ...eventMapper.toRow(log),
-        blockNumber: log.blockNumber,
-      }));
+      try {
+        const logs = await stakeRegistry.queryFilter(eventMapper.filter(stakeRegistry, address), DEPLOY_BLOCK);
+        return logs.map((log) => ({
+          ...eventMapper.toRow(log),
+          blockNumber: log.blockNumber,
+        }));
+      } catch (error) {
+        console.warn('Failed to fetch StakeRegistry history chunk:', error);
+        return [];
+      }
     }),
   );
 
-  let createdLogs = [];
   try {
-    createdLogs = await escrow.queryFilter(escrow.filters.EscrowCreated(null, null, address), DEPLOY_BLOCK);
-  } catch (e) {
-    console.warn('Failed to fetch EscrowCreated events:', e);
-  }
-  const escrowIds = [...new Set(createdLogs.map((log) => log.args?.escrowId?.toString()).filter(Boolean))];
+    const nextId = Number(await escrow.nextEscrowId());
+    let escrowRows = [];
 
-  let fundedGroupedLogs = [];
-  let deliverableGroupedLogs = [];
-  let settledLogs = [];
+    if (nextId > 0) {
+      const escrowDetails = await Promise.all(
+        Array.from({ length: nextId }, async (_, index) => {
+          try {
+            const details = await escrow.getEscrow(index);
+            return { escrowId: index.toString(), details };
+          } catch {
+            return null;
+          }
+        }),
+      );
 
-  try {
-    fundedGroupedLogs = await Promise.all(
-      escrowIds.map(async (escrowId) => {
-        const logs = await escrow.queryFilter(escrow.filters.EscrowFunded(BigInt(escrowId)), DEPLOY_BLOCK);
-        return logs.map((log) => ({
-          escrowId,
-          hash: log.transactionHash,
-          method: 'ESCROW_FUNDED',
-          status: 'Confirmed',
-          amount: log.args.amount,
-          label: 'Escrow Funded',
-          blockNumber: log.blockNumber,
-        }));
+      escrowRows = escrowDetails
+        .filter(Boolean)
+        .filter(({ details }) => details.agent?.toLowerCase?.() === normalizedAddress)
+        .flatMap(({ escrowId, details }) => {
+          const rows = [];
+          const createdAt = Number(details.createdAt ?? 0n);
+          const fundedAt = Number(details.fundedAt ?? 0n);
+          const submittedAt = Number(details.submittedAt ?? 0n);
+          const status = Number(details.status ?? 0n);
+
+          if (createdAt > 0) {
+            rows.push({
+              escrowId,
+              hash: null,
+              method: 'ESCROW_CREATED',
+              status: 'Confirmed',
+              amount: details.amount,
+              label: 'Escrow Created',
+              blockNumber: null,
+              timestamp: createdAt,
+            });
+          }
+
+          if (fundedAt > 0) {
+            rows.push({
+              escrowId,
+              hash: null,
+              method: 'ESCROW_FUNDED',
+              status: 'Confirmed',
+              amount: details.amount,
+              label: 'Escrow Funded',
+              blockNumber: null,
+              timestamp: fundedAt,
+            });
+          }
+
+          if (submittedAt > 0) {
+            rows.push({
+              escrowId,
+              hash: null,
+              method: 'DELIVERABLE',
+              status: 'Confirmed',
+              amount: 0,
+              label: 'Deliverable Submitted',
+              blockNumber: null,
+              timestamp: submittedAt,
+            });
+          }
+
+          if (status === 3) {
+            rows.push({
+              escrowId,
+              hash: null,
+              method: 'ESCROW_SETTLED',
+              status: 'Confirmed',
+              amount: details.amount,
+              label: 'Escrow Settled',
+              blockNumber: null,
+              timestamp: submittedAt,
+            });
+          }
+
+          if (status === 4) {
+            rows.push({
+              escrowId,
+              hash: null,
+              method: 'ESCROW_REFUNDED',
+              status: 'Confirmed',
+              amount: details.amount,
+              label: 'Escrow Refunded',
+              blockNumber: null,
+              timestamp: submittedAt,
+            });
+          }
+
+          return rows;
+        });
+    }
+
+    const rows = [...registryGroupedLogs.flat(), ...escrowRows];
+    const uniqueBlocks = [...new Set(rows.map((row) => row.blockNumber).filter((blockNumber) => blockNumber != null))];
+    const blockEntries = await Promise.all(
+      uniqueBlocks.map(async (blockNumber) => {
+        try {
+          return [blockNumber, await provider.getBlock(blockNumber)];
+        } catch {
+          return [blockNumber, null];
+        }
       }),
     );
-  } catch (e) {
-    console.warn('Failed to fetch EscrowFunded events:', e);
-  }
+    const blockMap = new Map(blockEntries);
 
-  try {
-    deliverableGroupedLogs = await Promise.all(
-      escrowIds.map(async (escrowId) => {
-        const logs = await escrow.queryFilter(escrow.filters.DeliverableSubmitted(BigInt(escrowId)), DEPLOY_BLOCK);
-        return logs.map((log) => ({
-          escrowId,
-          hash: log.transactionHash,
-          method: 'DELIVERABLE',
-          status: 'Confirmed',
-          amount: 0,
-          label: 'Deliverable Submitted',
-          blockNumber: log.blockNumber,
-        }));
+    return rows
+      .map((row) => {
+        const block = row.blockNumber != null ? blockMap.get(row.blockNumber) : null;
+        const timestamp = row.timestamp ?? block?.timestamp ?? null;
+        return {
+          ...row,
+          timestamp,
+          amountLabel: row.amount ? formatUsdc(row.amount) : 'Metadata',
+          timestampLabel: timestamp ? formatDateTime(timestamp) : 'Pending',
+        };
+      })
+      .sort((left, right) => (right.timestamp ?? 0) - (left.timestamp ?? 0));
+  } catch (error) {
+    console.warn('Failed to fetch escrow history via direct reads:', error);
+    const rows = [...registryGroupedLogs.flat()];
+    const uniqueBlocks = [...new Set(rows.map((row) => row.blockNumber).filter((blockNumber) => blockNumber != null))];
+    const blockEntries = await Promise.all(
+      uniqueBlocks.map(async (blockNumber) => {
+        try {
+          return [blockNumber, await provider.getBlock(blockNumber)];
+        } catch {
+          return [blockNumber, null];
+        }
       }),
     );
-  } catch (e) {
-    console.warn('Failed to fetch DeliverableSubmitted events:', e);
+    const blockMap = new Map(blockEntries);
+
+    return rows
+      .map((row) => {
+        const block = row.blockNumber != null ? blockMap.get(row.blockNumber) : null;
+        const timestamp = block?.timestamp ?? null;
+        return {
+          ...row,
+          timestamp,
+          amountLabel: row.amount ? formatUsdc(row.amount) : 'Metadata',
+          timestampLabel: timestamp ? formatDateTime(timestamp) : 'Pending',
+        };
+      })
+      .sort((left, right) => (right.timestamp ?? 0) - (left.timestamp ?? 0));
   }
-
-  try {
-    settledLogs = await escrow.queryFilter(escrow.filters.EscrowSettled(null, address), DEPLOY_BLOCK);
-  } catch (e) {
-    console.warn('Failed to fetch EscrowSettled events:', e);
-  }
-
-  const escrowRows = [
-    ...createdLogs.map((log) => ({
-      escrowId: log.args.escrowId?.toString(),
-      hash: log.transactionHash,
-      method: 'ESCROW_CREATED',
-      status: 'Confirmed',
-      amount: log.args.amount,
-      label: 'Escrow Created',
-      blockNumber: log.blockNumber,
-    })),
-    ...fundedGroupedLogs.flat(),
-    ...deliverableGroupedLogs.flat(),
-    ...settledLogs.map((log) => ({
-      escrowId: log.args.escrowId?.toString(),
-      hash: log.transactionHash,
-      method: 'ESCROW_SETTLED',
-      status: 'Confirmed',
-      amount: log.args.agentPayment,
-      label: 'Escrow Settled',
-      blockNumber: log.blockNumber,
-    })),
-  ];
-
-  const rows = [...registryGroupedLogs.flat(), ...escrowRows];
-  const uniqueBlocks = [...new Set(rows.map((row) => row.blockNumber))];
-  const blockEntries = await Promise.all(
-    uniqueBlocks.map(async (blockNumber) => [blockNumber, await provider.getBlock(blockNumber)]),
-  );
-  const blockMap = new Map(blockEntries);
-
-  return rows
-    .map((row) => {
-      const block = blockMap.get(row.blockNumber);
-      return {
-        ...row,
-        timestamp: block?.timestamp ?? null,
-        amountLabel: row.amount ? formatUsdc(row.amount) : 'Metadata',
-        timestampLabel: block?.timestamp ? formatDateTime(block.timestamp) : 'Pending',
-      };
-    })
-    .sort((left, right) => right.blockNumber - left.blockNumber);
 }
 
 export function parseWalletError(error) {

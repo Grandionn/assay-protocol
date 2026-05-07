@@ -12,7 +12,7 @@ const mobileNavItems = [
 
 export function AppShell() {
   const location = useLocation();
-  const { address } = useWallet();
+  const { address, isRegisteredAgent } = useWallet();
   const isLandingPage = location.pathname === '/';
 
   return (
@@ -44,7 +44,7 @@ export function AppShell() {
                   </NavLink>
                 );
               })}
-              {address ? (
+              {isRegisteredAgent ? (
                 <NavLink
                   to={`/agent/${address}`}
                   className={({ isActive }) =>

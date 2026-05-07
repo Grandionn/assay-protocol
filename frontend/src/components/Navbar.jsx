@@ -12,6 +12,7 @@ export function Navbar() {
     connectWallet,
     hasWallet,
     isConnecting,
+    isRegisteredAgent,
     isWrongNetwork,
     switchToBaseSepolia,
   } = useWallet();
@@ -115,7 +116,7 @@ export function Navbar() {
           <NavLink to="/escrows" className={mobileNavLinkClassName} onClick={() => setIsMobileMenuOpen(false)}>
             My Escrows
           </NavLink>
-          {address ? (
+          {isRegisteredAgent ? (
             <NavLink to={`/agent/${address}`} className={mobileNavLinkClassName} onClick={() => setIsMobileMenuOpen(false)}>
               My Agent
             </NavLink>

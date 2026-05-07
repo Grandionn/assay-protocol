@@ -14,7 +14,7 @@ const primaryItems = [
 ];
 
 export function Sidebar() {
-  const { address } = useWallet();
+  const { address, isRegisteredAgent } = useWallet();
 
   return (
     <aside className="fixed bottom-0 left-0 top-[72px] hidden w-20 border-r border-white/5 bg-surface/88 px-3 py-6 backdrop-blur-xl md:flex xl:w-72 xl:px-5">
@@ -42,9 +42,9 @@ export function Sidebar() {
             );
           })}
 
-          {address ? <div className="my-4 border-t border-white/5" /> : null}
+          {isRegisteredAgent ? <div className="my-4 border-t border-white/5" /> : null}
 
-          {address ? (
+          {isRegisteredAgent ? (
             <NavLink
               to={`/agent/${address}`}
               className={({ isActive }) =>
