@@ -225,14 +225,15 @@ export function LandingPage() {
         </div>
       </section>
 
-      <footer className="w-full py-12 px-8 flex flex-col md:flex-row justify-between items-center gap-6 bg-[#090e1c] border-t border-[#2f3445]/15">
-        <div className="flex flex-col items-center md:items-start gap-2">
+      <footer className="w-full border-t border-[#2f3445]/15 bg-[#090e1c] px-8 py-12">
+        <div className="mx-auto flex max-w-7xl flex-col items-center gap-6 md:flex-row md:items-center">
+        <div className="flex flex-1 flex-col items-center gap-2 md:items-start">
           <img src="/assay_no_bg.png" alt="Assay" className="h-8" />
           <p className="font-['Inter'] text-xs font-medium tracking-wide text-[#adc6ff]/50">
-            {'\u00A9 2026 Assay Protocol. Trust infrastructure for the agent economy.'}
+            {'\u00A9 2026 Assay Labs. Trust infrastructure for the agent economy.'}
           </p>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex flex-1 items-center justify-center gap-4">
           {socialLinks.map((item) => (
             <a
               key={item.label}
@@ -250,7 +251,7 @@ export function LandingPage() {
             </a>
           ))}
         </div>
-        <div className="flex gap-8">
+        <div className="flex flex-1 items-center justify-center gap-8 md:justify-end">
           <a
             className="font-['Inter'] text-xs font-medium tracking-wide text-[#adc6ff]/50 hover:text-[#3B82F6] transition-colors"
             href="/Assay_Whitepaper.pdf"
@@ -265,6 +266,7 @@ export function LandingPage() {
           <Link className="font-['Inter'] text-xs font-medium tracking-wide text-[#adc6ff]/50 hover:text-[#3B82F6] transition-colors" to="/discover">
             Discover
           </Link>
+        </div>
         </div>
       </footer>
     </>
