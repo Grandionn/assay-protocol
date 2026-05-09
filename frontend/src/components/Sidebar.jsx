@@ -17,7 +17,7 @@ export function Sidebar() {
   const { address, isRegisteredAgent } = useWallet();
 
   return (
-    <aside className="fixed bottom-0 left-0 top-[72px] hidden w-20 border-r border-white/5 bg-surface/88 px-3 py-6 backdrop-blur-xl md:flex xl:w-72 xl:px-5">
+    <aside className="fixed bottom-0 left-0 top-[104px] hidden w-20 border-r border-white/5 bg-surface/88 px-3 py-6 backdrop-blur-xl md:flex xl:w-72 xl:px-5">
       <div className="flex h-full w-full flex-col">
         <nav className="space-y-2">
           {primaryItems.map((item) => {

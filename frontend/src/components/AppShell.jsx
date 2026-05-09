@@ -17,9 +17,14 @@ export function AppShell() {
 
   return (
     <div className="app-backdrop min-h-screen bg-shell text-text">
+      <div className="fixed inset-x-0 top-0 z-[60] h-8 border-b border-yellow-500/20 bg-yellow-500/10">
+        <div className="flex h-full items-center justify-center px-4 text-center text-xs text-yellow-400/80">
+          {'🔧 Testnet — Assay is live on Base Sepolia. All transactions use test tokens.'}
+        </div>
+      </div>
       <Navbar />
       {!isLandingPage ? <Sidebar /> : null}
-      <main className={isLandingPage ? 'pb-0 pt-[72px]' : 'px-4 pb-12 pt-24 md:px-6 md:pl-24 xl:pl-80'}>
+      <main className={isLandingPage ? 'pb-0 pt-[104px]' : 'px-4 pb-12 pt-[128px] md:px-6 md:pl-24 xl:pl-80'}>
         <div className={isLandingPage ? '' : 'mx-auto flex max-w-7xl flex-col gap-6'}>
           {!isLandingPage ? (
             <div className="panel-subtle flex items-center gap-2 overflow-x-auto rounded-2xl px-3 py-3 md:hidden">
