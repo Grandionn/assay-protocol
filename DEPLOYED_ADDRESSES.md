@@ -7,12 +7,12 @@
 
 ## Contract Addresses
 
-| Contract | Address |
-|---|---|
-| MockUSDC | `0x0e645C8f28c2B0511CCb29B1b22b899ADcd7e256` |
+| Contract           | Address                                      |
+| ------------------ | -------------------------------------------- |
+| MockUSDC           | `0x0e645C8f28c2B0511CCb29B1b22b899ADcd7e256` |
 | AssayStakeRegistry | `0x20ddFAedc1Fca9Bbd5d660384bf24cCbeEB1d7f9` |
-| AssayReputation | `0xD6a81ADd33398A777640787b2f48D7A33D46fbab` |
-| AssayEscrow | `0x17E177d698A244E13f84446982BA772eBdCed567` |
+| AssayReputation    | `0xD6a81ADd33398A777640787b2f48D7A33D46fbab` |
+| AssayEscrow        | `0x17E177d698A244E13f84446982BA772eBdCed567` |
 
 ## Wiring
 

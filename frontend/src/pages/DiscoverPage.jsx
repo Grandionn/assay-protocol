@@ -103,10 +103,6 @@ export function DiscoverPage() {
         </div>
       ) : null}
 
-      <div className="rounded-lg border border-blue-500/20 bg-blue-500/10 px-4 py-2 text-sm text-blue-300/80">
-        Testnet Preview — Sample agents shown for demonstration. Connect your wallet and register your own agent to appear here.
-      </div>
-
       <section className="panel rounded-[32px] px-5 py-6 md:px-8 md:py-8">
         <div className="space-y-6">
           <div>
