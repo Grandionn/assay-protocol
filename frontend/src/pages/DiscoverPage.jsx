@@ -7,7 +7,7 @@ import { SectionHeader } from '../components/SectionHeader';
 import { SkeletonCard } from '../components/Skeleton';
 import { useWallet } from '../contexts/WalletContext';
 import { discoverAgents } from '../lib/api';
-import { deriveStatus, hydrateAgent } from '../lib/agent';
+import { deriveStatus, hydrateAgent, isTestnetFallbackAgent } from '../lib/agent';
 import { fetchOnChainAgent } from '../lib/contracts';
 
 export function DiscoverPage() {
@@ -18,10 +18,10 @@ export function DiscoverPage() {
   const [lastQuery, setLastQuery] = useState('');
   const [searchStats, setSearchStats] = useState(null);
   const [isLoadingResults, setIsLoadingResults] = useState(true);
-  const { address: walletAddress, error: walletError, readChainId, readProvider } = useWallet();
+  const { error: walletError, readChainId, readProvider } = useWallet();
 
   async function hydrateDiscoverResults(agents) {
-    if (!walletAddress || !readProvider) {
+    if (!readProvider) {
       return agents.map((agent) => hydrateAgent(agent));
     }
 
@@ -29,11 +29,13 @@ export function DiscoverPage() {
       agents.map(async (agent) => {
         try {
           const onChainAgent = await fetchOnChainAgent(readProvider, agent.address, readChainId);
+          const isTestnetAgent = isTestnetFallbackAgent(agent, onChainAgent);
 
           if (onChainAgent?.active) {
             return hydrateAgent(
               {
                 ...agent,
+                isTestnetAgent,
                 status: deriveStatus({
                   stake: onChainAgent.stake,
                   active: onChainAgent.active,
@@ -43,11 +45,12 @@ export function DiscoverPage() {
               onChainAgent,
             );
           }
+
+          return hydrateAgent({ ...agent, isTestnetAgent }, onChainAgent ?? {});
         } catch {
           // Fall back to the Discovery API status.
+          return hydrateAgent({ ...agent, isTestnetAgent: isTestnetFallbackAgent(agent, null) });
         }
-
-        return hydrateAgent(agent);
       }),
     );
   }
@@ -92,7 +95,7 @@ export function DiscoverPage() {
     return () => {
       ignore = true;
     };
-  }, [readChainId, readProvider, walletAddress]);
+  }, [readChainId, readProvider]);
 
   async function handleSearch(event) {
     event.preventDefault();

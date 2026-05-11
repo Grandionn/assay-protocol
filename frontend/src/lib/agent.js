@@ -66,6 +66,23 @@ export function deriveStatus({ stake, active, registered }) {
   return 'Under Review';
 }
 
+export function isTestnetFallbackAgent(indexedAgent, onChainAgent) {
+  if (!indexedAgent) {
+    return false;
+  }
+
+  if (!onChainAgent) {
+    return true;
+  }
+
+  return (
+    !onChainAgent.active &&
+    !onChainAgent.registered &&
+    Number(onChainAgent.stake ?? 0) === 0 &&
+    Number(onChainAgent.earnings ?? 0) === 0
+  );
+}
+
 export function hydrateAgent(rawAgent, onChainAgent = {}, onChainStats = null) {
   const address = rawAgent?.address ?? onChainAgent?.address ?? '';
   const capability = rawAgent?.capability ?? onChainAgent?.capability ?? onChainAgent?.capabilityHash ?? '';
@@ -102,6 +119,7 @@ export function hydrateAgent(rawAgent, onChainAgent = {}, onChainStats = null) {
     completionRate,
     avgSpeedMs,
     reliabilityStreak,
+    isTestnetAgent: Boolean(rawAgent?.isTestnetAgent),
     shortAddress: truncateAddress(address),
     combinedScore: rawAgent?.combinedScore ?? 0,
     totalEarnings: onChainAgent?.earnings ?? rawAgent?.totalEarnings ?? 0,

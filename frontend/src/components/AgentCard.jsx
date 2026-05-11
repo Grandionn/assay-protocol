@@ -41,6 +41,11 @@ export function AgentCard({ agent }) {
         </div>
         <div className="flex flex-col items-end gap-2">
           <StatusBadge status={agent.status} />
+          {agent.isTestnetAgent ? (
+            <div className="rounded-full border border-yellow-500/25 bg-yellow-500/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.28em] text-yellow-400/90">
+              Testnet Agent
+            </div>
+          ) : null}
           <div className="rounded-full border border-primary/15 bg-primary/8 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.28em] text-primary">
             Match {Math.round(agent.combinedScore * 100)}%
           </div>

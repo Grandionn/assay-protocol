@@ -24,7 +24,7 @@ import {
 } from '../config/contracts';
 import { useWallet } from '../contexts/WalletContext';
 import { fetchAgentTransactions, fetchIndexedAgent } from '../lib/api';
-import { hydrateAgent } from '../lib/agent';
+import { hydrateAgent, isTestnetFallbackAgent } from '../lib/agent';
 import { fetchAgentStats, fetchOnChainAgent, fetchOnChainScore } from '../lib/contracts';
 import { formatDateTime, formatPercent, formatUsdc, formatUsdcCompact, truncateAddress } from '../lib/format';
 
@@ -67,9 +67,10 @@ export function AgentProfilePage() {
           onChainScore != null && (indexedScore === 0 || onChainScore > indexedScore)
             ? onChainScore
             : indexedScore;
+        const isTestnetAgent = isTestnetFallbackAgent(indexedMetadata, onChainAgent);
         const hydrated = hydrateAgent(
           indexedMetadata
-            ? { ...indexedMetadata, assayScore: mergedScore }
+            ? { ...indexedMetadata, assayScore: mergedScore, isTestnetAgent }
             : { address, assayScore: mergedScore },
           onChainAgent ?? {},
           onChainStats,
@@ -185,6 +186,7 @@ export function AgentProfilePage() {
   const avgSpeedLabel = agent.avgSpeedMs == null ? 'No transactions yet' : `${agent.avgSpeedMs} ms`;
   const avgSpeedWidth = agent.avgSpeedMs == null ? 0 : Math.max(24, 100 - agent.avgSpeedMs / 2);
   const hasReliabilityStreak = agent.reliabilityStreak != null && agent.reliabilityStreak > 0;
+  const showTestnetEarningsLabel = agent.isTestnetAgent && history.length > 0 && Number(agent.totalEarnings ?? 0) === 0;
 
   return (
     <div className="space-y-8">
@@ -210,6 +212,11 @@ export function AgentProfilePage() {
                 <div>
                   <div className="mb-3 flex items-center gap-3">
                     <StatusBadge status={agent.status} />
+                    {agent.isTestnetAgent ? (
+                      <div className="rounded-full border border-yellow-500/25 bg-yellow-500/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.28em] text-yellow-400/90">
+                        Testnet Agent
+                      </div>
+                    ) : null}
                     <div className="rounded-full border border-primary/15 bg-primary/8 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.28em] text-primary">
                       Indexed Profile
                     </div>
@@ -272,12 +279,18 @@ export function AgentProfilePage() {
             <div>
               <div className="text-[10px] font-semibold uppercase tracking-[0.28em] text-muted">Total Earnings</div>
               <div className="mt-2 font-display text-4xl font-bold tracking-[-0.08em] text-text">
-                {formatUsdc(agent.totalEarnings)}
+                {showTestnetEarningsLabel ? 'Testnet data' : formatUsdc(agent.totalEarnings)}
               </div>
             </div>
-            <div className="rounded-2xl border border-white/6 bg-white/4 p-4 text-sm leading-7 text-slate-300/78">
-              Live data from Base Mainnet, with Discovery data used as fallback when a record has not migrated on-chain yet.
-            </div>
+            {agent.isTestnetAgent ? (
+              <div className="rounded-2xl border border-yellow-500/20 bg-yellow-500/10 p-4 text-sm leading-7 text-yellow-200/85">
+                This agent was active on Base Sepolia testnet. Score and transaction history reflect testnet activity. Mainnet registration coming soon.
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-white/6 bg-white/4 p-4 text-sm leading-7 text-slate-300/78">
+                Live data from Base Mainnet, with Discovery data used as fallback when a record has not migrated on-chain yet.
+              </div>
+            )}
           </div>
         </article>
       </section>
