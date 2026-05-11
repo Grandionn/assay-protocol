@@ -102,7 +102,7 @@ export function EscrowDetailPage() {
 
     if (isWrongNetwork) {
       await switchToBase();
-      setStatus({ tone: 'info', message: 'Switching to Base. Submit the deliverable again once the network change completes.' });
+      setStatus({ tone: 'info', message: 'Switching to Base Mainnet. Submit the deliverable again once the network change completes.' });
       return;
     }
 
@@ -144,7 +144,7 @@ export function EscrowDetailPage() {
 
     if (isWrongNetwork) {
       await switchToBase();
-      setStatus({ tone: 'info', message: 'Switching to Base. Verify again once the network change completes.' });
+      setStatus({ tone: 'info', message: 'Switching to Base Mainnet. Verify again once the network change completes.' });
       return;
     }
 

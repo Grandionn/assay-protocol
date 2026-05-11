@@ -9,13 +9,11 @@ export function Navbar() {
   const {
     address,
     isMainnet,
-    isTestnet,
     connectWallet,
     hasWallet,
     isConnecting,
     isRegisteredAgent,
     isWrongNetwork,
-    showTestnetBanner,
     switchToBase,
   } = useWallet();
 
@@ -30,14 +28,10 @@ export function Navbar() {
       'block w-full px-6 py-3 text-sm font-semibold tracking-tight transition',
       isActive ? 'text-primary' : 'text-muted hover:text-text',
     ].join(' ');
-  const badgeLabel = isMainnet ? 'BASE' : isTestnet ? 'BASE SEPOLIA' : 'SWITCH TO BASE';
+  const badgeLabel = 'BASE';
   const badgeClassName = [
     'rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.32em]',
-    isWrongNetwork
-      ? 'border-warning/30 bg-warning/10 text-warning'
-      : isTestnet
-        ? 'border-warning/30 bg-warning/10 text-warning'
-        : 'border-primary/20 bg-primary/10 text-primary',
+    'border-primary/20 bg-primary/10 text-primary',
   ].join(' ');
   const connectedButtonClassName = [
     'flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-semibold transition',
@@ -48,7 +42,7 @@ export function Navbar() {
   const walletButtonLabel = isConnecting ? 'Connecting' : hasWallet ? 'Connect Wallet' : 'MetaMask Required';
 
   return (
-    <header className={`fixed inset-x-0 ${showTestnetBanner ? 'top-8' : 'top-0'} z-50 border-b border-white/5 bg-background/78 backdrop-blur-xl`}>
+    <header className="fixed inset-x-0 top-0 z-50 border-b border-white/5 bg-background/78 backdrop-blur-xl">
       <div className="mx-auto flex h-[72px] max-w-[1600px] items-center justify-between gap-4 px-4 md:px-6">
         <div className="flex min-w-0 items-center gap-5">
           <Link to="/" className="shrink-0">
@@ -75,7 +69,7 @@ export function Navbar() {
             {isMobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
           </button>
 
-          {connected ? <div className={`hidden md:block ${badgeClassName}`}>{badgeLabel}</div> : null}
+          {connected && isMainnet ? <div className={`hidden md:block ${badgeClassName}`}>{badgeLabel}</div> : null}
 
           {connected ? (
             <button
@@ -84,7 +78,7 @@ export function Navbar() {
               className={`hidden md:flex ${connectedButtonClassName}`}
             >
               <Wallet size={16} />
-              {isWrongNetwork ? 'Switch to Base' : truncateAddress(address)}
+              {isWrongNetwork ? 'Switch to Base Mainnet' : truncateAddress(address)}
             </button>
           ) : (
             <button
@@ -132,7 +126,7 @@ export function Navbar() {
             Whitepaper
           </a>
           <div className="mx-6 my-2 border-t border-white/10" />
-          {connected ? (
+          {connected && isMainnet ? (
             <div className="px-6 pb-3">
               <div className={`inline-flex ${badgeClassName}`}>{badgeLabel}</div>
             </div>
@@ -150,7 +144,7 @@ export function Navbar() {
                 className={`flex w-full items-center justify-center ${connectedButtonClassName}`}
               >
                 <Wallet size={16} />
-                {isWrongNetwork ? 'Switch to Base' : truncateAddress(address)}
+                {isWrongNetwork ? 'Switch to Base Mainnet' : truncateAddress(address)}
               </button>
             ) : (
               <button

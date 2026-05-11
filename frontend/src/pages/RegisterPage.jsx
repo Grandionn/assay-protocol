@@ -101,7 +101,7 @@ export function RegisterPage() {
 
     if (isWrongNetwork) {
       await switchToBase();
-      setStatus({ tone: 'info', message: 'Switching to Base. Submit again once the network change finishes.' });
+      setStatus({ tone: 'info', message: 'Switching to Base Mainnet. Submit again once the network change finishes.' });
       return;
     }
 

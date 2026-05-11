@@ -16,8 +16,13 @@ import { EmptyState } from '../components/EmptyState';
 import { SectionHeader } from '../components/SectionHeader';
 import { SkeletonCard, SkeletonLine, SkeletonScoreRing } from '../components/Skeleton';
 import { StatusBadge } from '../components/StatusBadge';
+import {
+  BASE_MAINNET_CHAIN_ID,
+  BASE_MAINNET_EXPLORER_BASE_URL,
+  BASE_SEPOLIA_EXPLORER_BASE_URL,
+  MAINNET_TRANSACTION_CUTOFF,
+} from '../config/contracts';
 import { useWallet } from '../contexts/WalletContext';
-import { getNetworkConfig } from '../config/contracts';
 import { fetchAgentTransactions, fetchIndexedAgent } from '../lib/api';
 import { hydrateAgent } from '../lib/agent';
 import { fetchAgentStats, fetchOnChainAgent, fetchOnChainScore } from '../lib/contracts';
@@ -25,16 +30,13 @@ import { formatDateTime, formatPercent, formatUsdc, formatUsdcCompact, truncateA
 
 export function AgentProfilePage() {
   const { address } = useParams();
-  const { explorerBaseUrl, readChainId, readProvider } = useWallet();
+  const { readProvider } = useWallet();
   const [agent, setAgent] = useState(null);
   const [agentStats, setAgentStats] = useState(null);
   const [history, setHistory] = useState([]);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [copied, setCopied] = useState(false);
-
-  const activeNetwork = getNetworkConfig(readChainId);
-
   useEffect(() => {
     let ignore = false;
 
@@ -50,9 +52,9 @@ export function AgentProfilePage() {
             }
             throw requestError;
           }),
-          fetchOnChainAgent(readProvider, address, readChainId).catch(() => null),
-          fetchOnChainScore(readProvider, address, readChainId).catch(() => null),
-          fetchAgentStats(readProvider, address, readChainId).catch(() => null),
+          fetchOnChainAgent(readProvider, address).catch(() => null),
+          fetchOnChainScore(readProvider, address).catch(() => null),
+          fetchAgentStats(readProvider, address).catch(() => null),
         ]);
 
         if (!indexedAgent && !onChainAgent) {
@@ -87,6 +89,7 @@ export function AgentProfilePage() {
                   amountLabel: tx.amount && tx.amount !== '0' ? formatUsdc(BigInt(tx.amount)) : 'Metadata',
                   timestampLabel: tx.timestamp ? formatDateTime(tx.timestamp) : 'Pending',
                   escrowId: tx.escrowId || null,
+                  explorerBaseUrl: resolveExplorerBaseUrl(tx),
                   blockNumber: 0,
                 };
               } catch (itemError) {
@@ -123,7 +126,7 @@ export function AgentProfilePage() {
     return () => {
       ignore = true;
     };
-  }, [address, readChainId, readProvider]);
+  }, [address, readProvider]);
 
   async function handleCopyAddress() {
     if (!agent?.address || !navigator.clipboard) {
@@ -273,7 +276,7 @@ export function AgentProfilePage() {
               </div>
             </div>
             <div className="rounded-2xl border border-white/6 bg-white/4 p-4 text-sm leading-7 text-slate-300/78">
-              {`Live data from ${activeNetwork.chainName}${activeNetwork.isTestnet ? ' testnet' : ''}.`}
+              Live data from Base Mainnet, with Discovery data used as fallback when a record has not migrated on-chain yet.
             </div>
           </div>
         </article>
@@ -393,7 +396,7 @@ export function AgentProfilePage() {
                     <td className="px-6 py-4 text-right">
                       {row.hash ? (
                         <a
-                          href={`${explorerBaseUrl}/tx/${row.hash}`}
+                          href={`${row.explorerBaseUrl ?? BASE_MAINNET_EXPLORER_BASE_URL}/tx/${row.hash}`}
                           target="_blank"
                           rel="noreferrer"
                           className="inline-flex items-center gap-2 text-primary transition hover:text-sky-200"
@@ -418,6 +421,25 @@ export function AgentProfilePage() {
       </section>
     </div>
   );
+}
+
+function resolveExplorerBaseUrl(transaction) {
+  const chainId = Number(transaction?.chainId);
+  const network = String(transaction?.network ?? '').toLowerCase();
+
+  if (chainId === BASE_MAINNET_CHAIN_ID || network === 'base' || network === 'mainnet') {
+    return BASE_MAINNET_EXPLORER_BASE_URL;
+  }
+
+  if (network.includes('sepolia') || network.includes('testnet')) {
+    return BASE_SEPOLIA_EXPLORER_BASE_URL;
+  }
+
+  if (Number(transaction?.timestamp ?? 0) >= MAINNET_TRANSACTION_CUTOFF) {
+    return BASE_MAINNET_EXPLORER_BASE_URL;
+  }
+
+  return BASE_SEPOLIA_EXPLORER_BASE_URL;
 }
 
 function MetricBar({ label, value, width }) {

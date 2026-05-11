@@ -106,7 +106,7 @@ export function CreateEscrowPage() {
 
     if (isWrongNetwork) {
       await switchToBase();
-      setStatus({ tone: 'info', message: 'Switching to Base. Submit again once the network change completes.' });
+      setStatus({ tone: 'info', message: 'Switching to Base Mainnet. Submit again once the network change completes.' });
       return;
     }
 

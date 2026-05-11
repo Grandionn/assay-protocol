@@ -2,17 +2,15 @@ import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { ethers } from 'ethers';
 import {
   BASE_MAINNET_CHAIN_ID,
-  BASE_SEPOLIA_CHAIN_ID,
-  DEFAULT_CHAIN_ID,
   getExplorerBaseUrl,
   getNetworkConfig,
   getReadRpcUrl,
   getWalletNetworkConfig,
-  isSupportedChainId,
 } from '../config/contracts';
 import { getContracts } from '../lib/contracts';
 
 const WalletContext = createContext(null);
+const WRONG_NETWORK_MESSAGE = 'Switch to Base Mainnet to use Assay on-chain actions.';
 
 export function WalletProvider({ children }) {
   const [provider, setProvider] = useState(null);
@@ -22,15 +20,19 @@ export function WalletProvider({ children }) {
   const [isConnecting, setIsConnecting] = useState(false);
   const [isRegisteredAgent, setIsRegisteredAgent] = useState(false);
   const [error, setError] = useState('');
-  const mainnetReadProvider = useMemo(() => new ethers.JsonRpcProvider(getReadRpcUrl(BASE_MAINNET_CHAIN_ID)), []);
-  const sepoliaReadProvider = useMemo(() => new ethers.JsonRpcProvider(getReadRpcUrl(BASE_SEPOLIA_CHAIN_ID)), []);
-  const activeChainId = isSupportedChainId(chainId) ? chainId : DEFAULT_CHAIN_ID;
-  const readProvider = activeChainId === BASE_SEPOLIA_CHAIN_ID ? sepoliaReadProvider : mainnetReadProvider;
-  const connectedNetwork = getNetworkConfig(activeChainId);
+  const readProvider = useMemo(() => new ethers.JsonRpcProvider(getReadRpcUrl()), []);
+  const connectedNetwork = getNetworkConfig();
   const isMainnet = chainId === BASE_MAINNET_CHAIN_ID;
-  const isTestnet = chainId === BASE_SEPOLIA_CHAIN_ID;
-  const isWrongNetwork = Boolean(chainId) && !isSupportedChainId(chainId);
-  const showTestnetBanner = Boolean(address) && isTestnet;
+  const isWrongNetwork = Boolean(address) && chainId !== BASE_MAINNET_CHAIN_ID;
+
+  function resetWalletState() {
+    setSigner(null);
+    setAddress('');
+    setChainId(null);
+    setIsRegisteredAgent(false);
+    setIsConnecting(false);
+    setError('');
+  }
 
   useEffect(() => {
     if (!window.ethereum) {
@@ -45,15 +47,14 @@ export function WalletProvider({ children }) {
         setError('');
         const accounts =
           accountsOverride ?? (await window.ethereum.request({ method: 'eth_accounts' }));
-        const network = await browserProvider.getNetwork();
-        setChainId(Number(network.chainId));
 
         if (accounts.length === 0) {
-          setAddress('');
-          setSigner(null);
+          resetWalletState();
           return;
         }
 
+        const network = await browserProvider.getNetwork();
+        setChainId(Number(network.chainId));
         const nextSigner = await browserProvider.getSigner();
         setSigner(nextSigner);
         setAddress(ethers.getAddress(accounts[0]));
@@ -79,14 +80,34 @@ export function WalletProvider({ children }) {
       syncWalletState();
     }
 
+    function handleDisconnect() {
+      resetWalletState();
+    }
+
     window.ethereum.on('accountsChanged', handleAccountsChanged);
     window.ethereum.on('chainChanged', handleChainChanged);
+    window.ethereum.on('disconnect', handleDisconnect);
 
     return () => {
       window.ethereum.removeListener('accountsChanged', handleAccountsChanged);
       window.ethereum.removeListener('chainChanged', handleChainChanged);
+      window.ethereum.removeListener('disconnect', handleDisconnect);
     };
   }, []);
+
+  useEffect(() => {
+    if (!address) {
+      setError((current) => (current === WRONG_NETWORK_MESSAGE ? '' : current));
+      return;
+    }
+
+    if (chainId !== BASE_MAINNET_CHAIN_ID) {
+      setError(WRONG_NETWORK_MESSAGE);
+      return;
+    }
+
+    setError((current) => (current === WRONG_NETWORK_MESSAGE ? '' : current));
+  }, [address, chainId]);
 
   useEffect(() => {
     let ignore = false;
@@ -100,7 +121,7 @@ export function WalletProvider({ children }) {
       }
 
       try {
-        const { stakeRegistry } = getContracts(readProvider, activeChainId);
+        const { stakeRegistry } = getContracts(readProvider);
         const active = await stakeRegistry.isActive(address);
         if (!ignore) {
           setIsRegisteredAgent(Boolean(active));
@@ -117,7 +138,7 @@ export function WalletProvider({ children }) {
     return () => {
       ignore = true;
     };
-  }, [activeChainId, address, isWrongNetwork, readProvider]);
+  }, [address, isWrongNetwork, readProvider]);
 
   async function connectWallet() {
     if (!window.ethereum) {
@@ -177,14 +198,12 @@ export function WalletProvider({ children }) {
     signer,
     address,
     chainId,
-    readChainId: activeChainId,
-    chainLabel: address && isSupportedChainId(chainId) ? connectedNetwork.badgeLabel : '',
-    chainName: address && isSupportedChainId(chainId) ? connectedNetwork.chainName : '',
-    explorerBaseUrl: getExplorerBaseUrl(activeChainId),
+    readChainId: BASE_MAINNET_CHAIN_ID,
+    chainLabel: address && isMainnet ? connectedNetwork.badgeLabel : '',
+    chainName: connectedNetwork.chainName,
+    explorerBaseUrl: getExplorerBaseUrl(),
     isMainnet,
-    isTestnet,
     isWrongNetwork,
-    showTestnetBanner,
     isConnecting,
     isRegisteredAgent,
     connectWallet,

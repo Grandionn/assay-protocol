@@ -12,25 +12,12 @@ const mobileNavItems = [
 
 export function AppShell() {
   const location = useLocation();
-  const { address, isRegisteredAgent, showTestnetBanner } = useWallet();
+  const { address, isRegisteredAgent } = useWallet();
   const isLandingPage = location.pathname === '/';
-  const mainOffsetClassName = isLandingPage
-    ? showTestnetBanner
-      ? 'pb-0 pt-[104px]'
-      : 'pb-0 pt-[72px]'
-    : showTestnetBanner
-      ? 'px-4 pb-12 pt-[128px] md:px-6 md:pl-24 xl:pl-80'
-      : 'px-4 pb-12 pt-[96px] md:px-6 md:pl-24 xl:pl-80';
+  const mainOffsetClassName = isLandingPage ? 'pb-0 pt-[72px]' : 'px-4 pb-12 pt-[96px] md:px-6 md:pl-24 xl:pl-80';
 
   return (
     <div className="app-backdrop min-h-screen bg-shell text-text">
-      {showTestnetBanner ? (
-        <div className="fixed inset-x-0 top-0 z-[60] h-8 border-b border-yellow-500/20 bg-yellow-500/10">
-          <div className="flex h-full items-center justify-center px-4 text-center text-xs text-yellow-400/80">
-            {'🔧 Testnet - Assay is live on Base Sepolia. All transactions use test tokens.'}
-          </div>
-        </div>
-      ) : null}
       <Navbar />
       {!isLandingPage ? <Sidebar /> : null}
       <main className={mainOffsetClassName}>
