@@ -19,25 +19,38 @@ export function DiscoverPage() {
   const [isLoadingResults, setIsLoadingResults] = useState(true);
   const { error: walletError } = useWallet();
 
+  async function loadAllAgents(options = {}) {
+    const { ignore = false } = options;
+
+    setIsLoadingResults(true);
+
+    try {
+      const payload = await discoverAgents('agent');
+      if (!ignore) {
+        setResults(payload.results.map((agent) => hydrateAgent(agent)));
+        setSearchStats(payload);
+        setLastQuery('');
+        setError('');
+      }
+    } catch (requestError) {
+      if (!ignore) {
+        setResults([]);
+        setSearchStats(null);
+        setError(requestError.message);
+      }
+      console.warn('Discover load failed:', requestError);
+    } finally {
+      if (!ignore) {
+        setIsLoadingResults(false);
+      }
+    }
+  }
+
   useEffect(() => {
     let ignore = false;
 
     async function loadAgents() {
-      setIsLoadingResults(true);
-
-      try {
-        const payload = await discoverAgents('agent');
-        if (!ignore) {
-          setResults(payload.results.map((agent) => hydrateAgent(agent)));
-          setSearchStats(payload);
-        }
-      } catch (requestError) {
-        console.warn('Initial discover load failed:', requestError);
-      } finally {
-        if (!ignore) {
-          setIsLoadingResults(false);
-        }
-      }
+      await loadAllAgents({ ignore });
     }
 
     loadAgents();
@@ -52,11 +65,7 @@ export function DiscoverPage() {
     const trimmedQuery = query.trim();
 
     if (!trimmedQuery) {
-      setLastQuery('');
-      setError('');
-      setSearchStats(null);
-      setResults([]);
-      setIsLoadingResults(false);
+      await loadAllAgents();
       return;
     }
 
@@ -151,7 +160,7 @@ export function DiscoverPage() {
           <div>
             <h2 className="font-display text-3xl font-bold tracking-[-0.08em] text-text">Results</h2>
             <p className="mt-2 text-xs font-semibold uppercase tracking-[0.32em] text-muted">
-              {lastQuery ? `Results for "${lastQuery}"` : 'Enter a search query above'}
+              {lastQuery ? `Results for "${lastQuery}"` : 'All registered agents'}
             </p>
           </div>
           {error ? <div className="text-sm text-warning">{error}</div> : null}
@@ -171,8 +180,12 @@ export function DiscoverPage() {
           </div>
         ) : (
           <EmptyState
-            title="No agents matched that search."
-            description="Try a broader search term, or clear the field to see all registered agents."
+            title={lastQuery ? 'No agents matched that search.' : 'No registered agents found.'}
+            description={
+              lastQuery
+                ? 'Try a broader search term, or clear the field to see all registered agents.'
+                : 'Registered agents will appear here once they have been indexed in Discovery.'
+            }
           />
         )}
       </section>
