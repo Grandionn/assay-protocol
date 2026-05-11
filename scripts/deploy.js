@@ -26,7 +26,7 @@ const NETWORK_CONFIG = {
   },
   base: {
     usdc:         "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", // canonical USDC on Base mainnet
-    minimumStake: 100_000_000n,  // 100 USDC (6 decimals)
+    minimumStake: 10_000_000n,   // 10 USDC (6 decimals)
   },
 };
 
@@ -136,8 +136,14 @@ async function main() {
   // ── 4b. Verify wiring by reading authorization state back ────────────────
   console.log("\nVerifying wiring...");
 
-  const escrowAuthorized  = await stakeRegistryContract.isAuthorizedEscrow(escrowAddress);
-  const callerAuthorized  = await reputationContract.isAuthorizedCaller(escrowAddress);
+  const escrowAuthorized = await _waitForCondition(
+    () => stakeRegistryContract.isAuthorizedEscrow(escrowAddress),
+    "StakeRegistry escrow authorization"
+  );
+  const callerAuthorized = await _waitForCondition(
+    () => reputationContract.isAuthorizedCaller(escrowAddress),
+    "Reputation caller authorization"
+  );
 
   if (!escrowAuthorized) throw new Error("WIRING FAILED: Escrow not authorized in StakeRegistry");
   if (!callerAuthorized)  throw new Error("WIRING FAILED: Escrow not authorized as caller in Reputation");
@@ -195,7 +201,9 @@ async function main() {
     ``,
     `| Contract | Address |`,
     `|---|---|`,
-    ...(config.usdc ? [] : [`| MockUSDC | \`${usdcAddress}\` |`]),
+    ...(config.usdc
+      ? [`| USDC | \`${usdcAddress}\` |`]
+      : [`| MockUSDC | \`${usdcAddress}\` |`]),
     `| AssayStakeRegistry | \`${stakeRegistryAddress}\` |`,
     `| AssayReputation | \`${reputationAddress}\` |`,
     `| AssayEscrow | \`${escrowAddress}\` |`,
@@ -212,9 +220,10 @@ async function main() {
     `- Treasury is currently set to the deployer address. Update with \`setTreasury()\` before production use.`,
     `- MockUSDC is for Base Sepolia testnet only; mainnet deployment uses canonical USDC at \`0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\`.`,
   ];
-  const mdPath = path.join(__dirname, "..", "DEPLOYED_ADDRESSES.md");
+  const mdFilename = network === "base" ? "DEPLOYED_ADDRESSES_MAINNET.md" : "DEPLOYED_ADDRESSES.md";
+  const mdPath = path.join(__dirname, "..", mdFilename);
   fs.writeFileSync(mdPath, mdLines.join("\n") + "\n");
-  console.log(`  Addresses saved to DEPLOYED_ADDRESSES.md`);
+  console.log(`  Addresses saved to ${mdFilename}`);
 
   // ── 7. Verify on Basescan (optional) ─────────────────────────────────────
   if (process.env.BASESCAN_API_KEY) {
@@ -241,6 +250,22 @@ async function _verify(address, constructorArgs) {
     // Already verified or other non-fatal error
     console.warn(`  ⚠ Could not verify ${address}: ${err.message}`);
   }
+}
+
+async function _waitForCondition(readFn, label, attempts = 5, delayMs = 3000) {
+  for (let index = 0; index < attempts; index += 1) {
+    const result = await readFn();
+    if (result) {
+      return result;
+    }
+
+    if (index < attempts - 1) {
+      console.warn(`  Waiting for ${label}... retry ${index + 2}/${attempts}`);
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+  }
+
+  return false;
 }
 
 main().catch((err) => {
