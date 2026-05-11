@@ -7,7 +7,8 @@ import { SectionHeader } from '../components/SectionHeader';
 import { SkeletonCard } from '../components/Skeleton';
 import { useWallet } from '../contexts/WalletContext';
 import { discoverAgents } from '../lib/api';
-import { hydrateAgent } from '../lib/agent';
+import { deriveStatus, hydrateAgent } from '../lib/agent';
+import { fetchOnChainAgent } from '../lib/contracts';
 
 export function DiscoverPage() {
   const [query, setQuery] = useState('');
@@ -17,7 +18,39 @@ export function DiscoverPage() {
   const [lastQuery, setLastQuery] = useState('');
   const [searchStats, setSearchStats] = useState(null);
   const [isLoadingResults, setIsLoadingResults] = useState(true);
-  const { error: walletError } = useWallet();
+  const { address: walletAddress, error: walletError, readChainId, readProvider } = useWallet();
+
+  async function hydrateDiscoverResults(agents) {
+    if (!walletAddress || !readProvider) {
+      return agents.map((agent) => hydrateAgent(agent));
+    }
+
+    return Promise.all(
+      agents.map(async (agent) => {
+        try {
+          const onChainAgent = await fetchOnChainAgent(readProvider, agent.address, readChainId);
+
+          if (onChainAgent?.active) {
+            return hydrateAgent(
+              {
+                ...agent,
+                status: deriveStatus({
+                  stake: onChainAgent.stake,
+                  active: onChainAgent.active,
+                  registered: onChainAgent.registered,
+                }),
+              },
+              onChainAgent,
+            );
+          }
+        } catch {
+          // Fall back to the Discovery API status.
+        }
+
+        return hydrateAgent(agent);
+      }),
+    );
+  }
 
   async function loadAllAgents(options = {}) {
     const { ignore = false } = options;
@@ -26,8 +59,9 @@ export function DiscoverPage() {
 
     try {
       const payload = await discoverAgents('agent');
+      const hydratedResults = await hydrateDiscoverResults(payload.results);
       if (!ignore) {
-        setResults(payload.results.map((agent) => hydrateAgent(agent)));
+        setResults(hydratedResults);
         setSearchStats(payload);
         setLastQuery('');
         setError('');
@@ -58,7 +92,7 @@ export function DiscoverPage() {
     return () => {
       ignore = true;
     };
-  }, []);
+  }, [readChainId, readProvider, walletAddress]);
 
   async function handleSearch(event) {
     event.preventDefault();
@@ -74,7 +108,7 @@ export function DiscoverPage() {
       setIsLoadingResults(true);
       setError('');
       const payload = await discoverAgents(trimmedQuery);
-      const hydrated = payload.results.map((agent) => hydrateAgent(agent));
+      const hydrated = await hydrateDiscoverResults(payload.results);
       setResults(hydrated);
       setLastQuery(trimmedQuery);
       setSearchStats(payload);

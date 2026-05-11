@@ -30,22 +30,14 @@ export function Navbar() {
       'block w-full px-6 py-3 text-sm font-semibold tracking-tight transition',
       isActive ? 'text-primary' : 'text-muted hover:text-text',
     ].join(' ');
-  const badgeLabel = !connected
-    ? 'CONNECT WALLET'
-    : isMainnet
-      ? 'BASE'
-      : isTestnet
-        ? 'BASE SEPOLIA'
-        : 'SWITCH TO BASE';
+  const badgeLabel = isMainnet ? 'BASE' : isTestnet ? 'BASE SEPOLIA' : 'SWITCH TO BASE';
   const badgeClassName = [
     'rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.32em]',
-    !connected
-      ? 'border-white/10 bg-white/5 text-muted'
-      : isWrongNetwork
+    isWrongNetwork
+      ? 'border-warning/30 bg-warning/10 text-warning'
+      : isTestnet
         ? 'border-warning/30 bg-warning/10 text-warning'
-        : isTestnet
-          ? 'border-warning/30 bg-warning/10 text-warning'
-          : 'border-primary/20 bg-primary/10 text-primary',
+        : 'border-primary/20 bg-primary/10 text-primary',
   ].join(' ');
   const connectedButtonClassName = [
     'flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-semibold transition',
@@ -83,7 +75,7 @@ export function Navbar() {
             {isMobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
           </button>
 
-          <div className={`hidden md:block ${badgeClassName}`}>{badgeLabel}</div>
+          {connected ? <div className={`hidden md:block ${badgeClassName}`}>{badgeLabel}</div> : null}
 
           {connected ? (
             <button
@@ -140,9 +132,11 @@ export function Navbar() {
             Whitepaper
           </a>
           <div className="mx-6 my-2 border-t border-white/10" />
-          <div className="px-6 pb-3">
-            <div className={`inline-flex ${badgeClassName}`}>{badgeLabel}</div>
-          </div>
+          {connected ? (
+            <div className="px-6 pb-3">
+              <div className={`inline-flex ${badgeClassName}`}>{badgeLabel}</div>
+            </div>
+          ) : null}
           <div className="px-6 pb-4">
             {connected ? (
               <button

@@ -42,6 +42,7 @@ export function WalletProvider({ children }) {
 
     async function syncWalletState(accountsOverride) {
       try {
+        setError('');
         const accounts =
           accountsOverride ?? (await window.ethereum.request({ method: 'eth_accounts' }));
         const network = await browserProvider.getNetwork();
@@ -57,6 +58,12 @@ export function WalletProvider({ children }) {
         setSigner(nextSigner);
         setAddress(ethers.getAddress(accounts[0]));
       } catch (syncError) {
+        const syncMessage = syncError?.shortMessage ?? syncError?.message ?? '';
+        if (syncMessage.toLowerCase().includes('network changed')) {
+          setError('');
+          return;
+        }
+
         setError(syncError?.shortMessage ?? syncError?.message ?? 'Unable to read wallet state.');
       }
     }
