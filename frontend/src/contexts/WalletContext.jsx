@@ -1,26 +1,20 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { ethers } from 'ethers';
+import {
+  BASE_MAINNET_CHAIN_ID,
+  BASE_SEPOLIA_CHAIN_ID,
+  DEFAULT_CHAIN_ID,
+  getExplorerBaseUrl,
+  getNetworkConfig,
+  getReadRpcUrl,
+  getWalletNetworkConfig,
+  isSupportedChainId,
+} from '../config/contracts';
 import { getContracts } from '../lib/contracts';
-
-const BASE_SEPOLIA = {
-  chainId: '0x14A34',
-  chainName: 'Base Sepolia',
-  nativeCurrency: {
-    name: 'ETH',
-    symbol: 'ETH',
-    decimals: 18,
-  },
-  rpcUrls: ['https://sepolia.base.org'],
-  blockExplorerUrls: ['https://sepolia.basescan.org'],
-};
 
 const WalletContext = createContext(null);
 
 export function WalletProvider({ children }) {
-  const readProvider = useMemo(
-    () => new ethers.JsonRpcProvider(import.meta.env.VITE_ALCHEMY_RPC_URL || 'https://sepolia.base.org'),
-    [],
-  );
   const [provider, setProvider] = useState(null);
   const [signer, setSigner] = useState(null);
   const [address, setAddress] = useState('');
@@ -28,6 +22,15 @@ export function WalletProvider({ children }) {
   const [isConnecting, setIsConnecting] = useState(false);
   const [isRegisteredAgent, setIsRegisteredAgent] = useState(false);
   const [error, setError] = useState('');
+  const mainnetReadProvider = useMemo(() => new ethers.JsonRpcProvider(getReadRpcUrl(BASE_MAINNET_CHAIN_ID)), []);
+  const sepoliaReadProvider = useMemo(() => new ethers.JsonRpcProvider(getReadRpcUrl(BASE_SEPOLIA_CHAIN_ID)), []);
+  const activeChainId = isSupportedChainId(chainId) ? chainId : DEFAULT_CHAIN_ID;
+  const readProvider = activeChainId === BASE_SEPOLIA_CHAIN_ID ? sepoliaReadProvider : mainnetReadProvider;
+  const connectedNetwork = getNetworkConfig(activeChainId);
+  const isMainnet = chainId === BASE_MAINNET_CHAIN_ID;
+  const isTestnet = chainId === BASE_SEPOLIA_CHAIN_ID;
+  const isWrongNetwork = Boolean(chainId) && !isSupportedChainId(chainId);
+  const showTestnetBanner = Boolean(address) && isTestnet;
 
   useEffect(() => {
     if (!window.ethereum) {
@@ -82,7 +85,7 @@ export function WalletProvider({ children }) {
     let ignore = false;
 
     const checkAgentRegistration = async () => {
-      if (!address || !readProvider) {
+      if (!address || !readProvider || isWrongNetwork) {
         if (!ignore) {
           setIsRegisteredAgent(false);
         }
@@ -90,7 +93,7 @@ export function WalletProvider({ children }) {
       }
 
       try {
-        const { stakeRegistry } = getContracts(readProvider);
+        const { stakeRegistry } = getContracts(readProvider, activeChainId);
         const active = await stakeRegistry.isActive(address);
         if (!ignore) {
           setIsRegisteredAgent(Boolean(active));
@@ -107,7 +110,7 @@ export function WalletProvider({ children }) {
     return () => {
       ignore = true;
     };
-  }, [address, readProvider]);
+  }, [activeChainId, address, isWrongNetwork, readProvider]);
 
   async function connectWallet() {
     if (!window.ethereum) {
@@ -136,22 +139,24 @@ export function WalletProvider({ children }) {
     }
   }
 
-  async function switchToBaseSepolia() {
+  async function switchToBase() {
     if (!window.ethereum) {
       setError('MetaMask is required to switch networks.');
       return;
     }
 
+    const baseMainnetConfig = getWalletNetworkConfig(BASE_MAINNET_CHAIN_ID);
+
     try {
       await window.ethereum.request({
         method: 'wallet_switchEthereumChain',
-        params: [{ chainId: BASE_SEPOLIA.chainId }],
+        params: [{ chainId: baseMainnetConfig.chainId }],
       });
     } catch (switchError) {
       if (switchError.code === 4902) {
         await window.ethereum.request({
           method: 'wallet_addEthereumChain',
-          params: [BASE_SEPOLIA],
+          params: [baseMainnetConfig],
         });
       } else {
         setError(switchError?.shortMessage ?? switchError?.message ?? 'Unable to switch network.');
@@ -165,13 +170,19 @@ export function WalletProvider({ children }) {
     signer,
     address,
     chainId,
-    chainLabel: chainId ? (chainId === 84532 ? 'Base Sepolia' : `Chain ${chainId}`) : '',
-    isWrongNetwork: Boolean(chainId) && chainId !== 84532,
+    readChainId: activeChainId,
+    chainLabel: address && isSupportedChainId(chainId) ? connectedNetwork.badgeLabel : '',
+    chainName: address && isSupportedChainId(chainId) ? connectedNetwork.chainName : '',
+    explorerBaseUrl: getExplorerBaseUrl(activeChainId),
+    isMainnet,
+    isTestnet,
+    isWrongNetwork,
+    showTestnetBanner,
     isConnecting,
     isRegisteredAgent,
     connectWallet,
-    switchToBaseSepolia,
-    hasWallet: Boolean(window.ethereum),
+    switchToBase,
+    hasWallet: typeof window !== 'undefined' && Boolean(window.ethereum),
     error,
   };
 

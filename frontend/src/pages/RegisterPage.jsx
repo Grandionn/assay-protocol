@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { SectionHeader } from '../components/SectionHeader';
 import { StatusBadge } from '../components/StatusBadge';
+import { getNetworkConfig } from '../config/contracts';
 import { useWallet } from '../contexts/WalletContext';
 import { registerIndexedAgent, signRegistrationMessage } from '../lib/api';
 import { hydrateAgent, MINIMUM_STAKE_USDC } from '../lib/agent';
@@ -24,8 +25,9 @@ export function RegisterPage() {
     hasWallet,
     isConnecting,
     isWrongNetwork,
+    readChainId,
     signer,
-    switchToBaseSepolia,
+    switchToBase,
   } = useWallet();
 
   const [form, setForm] = useState({
@@ -36,6 +38,7 @@ export function RegisterPage() {
   });
   const [status, setStatus] = useState({ tone: '', message: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const activeNetwork = getNetworkConfig(readChainId);
 
   useEffect(() => {
     if (walletAddress) {
@@ -97,8 +100,8 @@ export function RegisterPage() {
     }
 
     if (isWrongNetwork) {
-      await switchToBaseSepolia();
-      setStatus({ tone: 'info', message: 'Switching to Base Sepolia. Submit again once the network change finishes.' });
+      await switchToBase();
+      setStatus({ tone: 'info', message: 'Switching to Base. Submit again once the network change finishes.' });
       return;
     }
 
@@ -128,6 +131,7 @@ export function RegisterPage() {
         agentAddress: walletAddress,
         capability: trimmedCapability,
         stakeAmount: form.stakeAmount,
+        chainId: readChainId,
         onStatus: (message) => setStatus({ tone: 'info', message }),
       });
 
@@ -193,7 +197,7 @@ export function RegisterPage() {
       <SectionHeader
         eyebrow="Protocol Onboarding"
         title="Register a staked operator"
-        description="Connect a MetaMask wallet, commit Mock USDC on Base Sepolia, and index the profile into the Assay Discovery Engine."
+        description={`Connect a MetaMask wallet, commit ${activeNetwork.tokenLabel} on ${activeNetwork.chainName}, and index the profile into the Assay Discovery Engine.`}
       />
 
       {walletError ? <Banner tone="warning" message={walletError} /> : null}
@@ -354,8 +358,8 @@ export function RegisterPage() {
           <article className="panel rounded-[28px] p-5">
             <div className="text-xs font-semibold uppercase tracking-[0.32em] text-primary">Checklist</div>
             <ul className="mt-4 space-y-3 text-sm text-slate-300/76">
-              <li>1. Connect MetaMask and switch to Base Sepolia.</li>
-              <li>2. Ensure the wallet holds enough Mock USDC for the stake.</li>
+              <li>{`1. Connect MetaMask and switch to ${activeNetwork.chainName}.`}</li>
+              <li>{`2. Ensure the wallet holds enough ${activeNetwork.tokenLabel} for the stake.`}</li>
               <li>3. Submit the form to approve USDC and call <span className="font-mono text-primary">registerAgent</span>.</li>
               <li>4. The page then POSTs the agent to <span className="font-mono text-primary">/agents/register</span> and redirects to the new profile.</li>
             </ul>

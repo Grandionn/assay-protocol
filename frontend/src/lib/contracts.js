@@ -3,15 +3,9 @@ import mockUsdcAbi from '../abi/MockUSDC.json';
 import stakeRegistryAbi from '../abi/AssayStakeRegistry.json';
 import escrowAbi from '../abi/AssayEscrow.json';
 import reputationAbi from '../abi/AssayReputation.json';
+import { DEFAULT_CHAIN_ID, getContractAddresses } from '../config/contracts';
 import { recordTransaction } from './api';
 import { formatDateTime, formatUsdc } from './format';
-
-export const CONTRACT_ADDRESSES = {
-  mockUsdc: '0x0e645C8f28c2B0511CCb29B1b22b899ADcd7e256',
-  stakeRegistry: '0x20ddFAedc1Fca9Bbd5d660384bf24cCbeEB1d7f9',
-  escrow: '0x17E177d698A244E13f84446982BA772eBdCed567',
-  reputation: '0xD6a81ADd33398A777640787b2f48D7A33D46fbab',
-};
 
 const DEPLOY_BLOCK = 39_430_000;
 
@@ -22,25 +16,27 @@ export function getEscrowStatusLabel(status) {
   return ESCROW_STATUS_LABELS[normalizedStatus] ?? `Unknown (${normalizedStatus})`;
 }
 
-export function getContracts(signerOrProvider) {
+export function getContracts(signerOrProvider, chainId = DEFAULT_CHAIN_ID) {
+  const contractAddresses = getContractAddresses(chainId);
+
   return {
     stakeRegistry: new ethers.Contract(
-      CONTRACT_ADDRESSES.stakeRegistry,
+      contractAddresses.stakeRegistry,
       stakeRegistryAbi,
       signerOrProvider,
     ),
-    usdc: new ethers.Contract(CONTRACT_ADDRESSES.mockUsdc, mockUsdcAbi, signerOrProvider),
-    escrow: new ethers.Contract(CONTRACT_ADDRESSES.escrow, escrowAbi, signerOrProvider),
-    reputation: new ethers.Contract(CONTRACT_ADDRESSES.reputation, reputationAbi, signerOrProvider),
+    usdc: new ethers.Contract(contractAddresses.usdc, mockUsdcAbi, signerOrProvider),
+    escrow: new ethers.Contract(contractAddresses.escrow, escrowAbi, signerOrProvider),
+    reputation: new ethers.Contract(contractAddresses.reputation, reputationAbi, signerOrProvider),
   };
 }
 
-export async function fetchOnChainAgent(provider, address) {
+export async function fetchOnChainAgent(provider, address, chainId = DEFAULT_CHAIN_ID) {
   if (!provider || !ethers.isAddress(address)) {
     return null;
   }
 
-  const { stakeRegistry } = getContracts(provider);
+  const { stakeRegistry } = getContracts(provider, chainId);
   const [info, active] = await Promise.all([
     stakeRegistry.getAgentInfo(address),
     stakeRegistry.isActive(address),
@@ -56,12 +52,12 @@ export async function fetchOnChainAgent(provider, address) {
   };
 }
 
-export async function fetchOnChainScore(provider, agentAddress) {
+export async function fetchOnChainScore(provider, agentAddress, chainId = DEFAULT_CHAIN_ID) {
   if (!provider || !ethers.isAddress(agentAddress)) {
     return null;
   }
 
-  const { reputation } = getContracts(provider);
+  const { reputation } = getContracts(provider, chainId);
 
   try {
     const score = await reputation.getScore(agentAddress);
@@ -71,9 +67,9 @@ export async function fetchOnChainScore(provider, agentAddress) {
   }
 }
 
-export async function fetchAgentStats(provider, agentAddress) {
+export async function fetchAgentStats(provider, agentAddress, chainId = DEFAULT_CHAIN_ID) {
   if (!provider || !ethers.isAddress(agentAddress)) return null;
-  const { reputation } = getContracts(provider);
+  const { reputation } = getContracts(provider, chainId);
   try {
     const stats = await reputation.getAgentStats(agentAddress);
     return {
@@ -89,14 +85,15 @@ export async function fetchAgentStats(provider, agentAddress) {
   }
 }
 
-export async function registerAgent({ signer, agentAddress, capability, stakeAmount, onStatus }) {
-  const { stakeRegistry, usdc } = getContracts(signer);
+export async function registerAgent({ signer, agentAddress, capability, stakeAmount, onStatus, chainId = DEFAULT_CHAIN_ID }) {
+  const { stakeRegistry, usdc } = getContracts(signer, chainId);
+  const contractAddresses = getContractAddresses(chainId);
   const stakeAmountMicro = ethers.parseUnits(stakeAmount, 6);
-  const allowance = await usdc.allowance(agentAddress, CONTRACT_ADDRESSES.stakeRegistry);
+  const allowance = await usdc.allowance(agentAddress, contractAddresses.stakeRegistry);
 
   if (allowance < stakeAmountMicro) {
     onStatus?.('Step 1/2: Approving USDC allowance...');
-    const approvalTx = await usdc.approve(CONTRACT_ADDRESSES.stakeRegistry, stakeAmountMicro);
+    const approvalTx = await usdc.approve(contractAddresses.stakeRegistry, stakeAmountMicro);
     await approvalTx.wait();
   }
 
@@ -123,8 +120,9 @@ export async function registerAgent({ signer, agentAddress, capability, stakeAmo
   };
 }
 
-export async function createAndFundEscrow({ signer, agentAddress, paymentAmount, specHash, deadlineTimestamp, onStatus }) {
-  const { escrow, stakeRegistry, usdc } = getContracts(signer);
+export async function createAndFundEscrow({ signer, agentAddress, paymentAmount, specHash, deadlineTimestamp, onStatus, chainId = DEFAULT_CHAIN_ID }) {
+  const { escrow, stakeRegistry, usdc } = getContracts(signer, chainId);
+  const contractAddresses = getContractAddresses(chainId);
   const paymentMicro = ethers.parseUnits(paymentAmount, 6);
   const buyerAddress = await signer.getAddress();
   const normalizedDeadline = BigInt(deadlineTimestamp);
@@ -160,11 +158,11 @@ export async function createAndFundEscrow({ signer, agentAddress, paymentAmount,
     throw new Error(formatEscrowStepError('Create escrow', escrow, error));
   }
 
-  const allowance = await usdc.allowance(buyerAddress, CONTRACT_ADDRESSES.escrow);
+  const allowance = await usdc.allowance(buyerAddress, contractAddresses.escrow);
   if (allowance < paymentMicro) {
     onStatus?.('Step 2/3: Approving USDC for escrow...');
     try {
-      const approveTx = await usdc.approve(CONTRACT_ADDRESSES.escrow, paymentMicro);
+      const approveTx = await usdc.approve(contractAddresses.escrow, paymentMicro);
       await approveTx.wait();
     } catch (error) {
       throw new Error(`Approve escrow allowance failed: ${parseWalletError(error)}`);
@@ -239,8 +237,8 @@ export async function createAndFundEscrow({ signer, agentAddress, paymentAmount,
   };
 }
 
-export async function submitDeliverable({ signer, escrowId, deliverableHash, agentAddress, onStatus }) {
-  const { escrow } = getContracts(signer);
+export async function submitDeliverable({ signer, escrowId, deliverableHash, agentAddress, onStatus, chainId = DEFAULT_CHAIN_ID }) {
+  const { escrow } = getContracts(signer, chainId);
   onStatus?.('Submitting deliverable on-chain...');
   const tx = await escrow.submitDeliverable(BigInt(escrowId), deliverableHash);
   const receipt = await tx.wait();
@@ -262,8 +260,8 @@ export async function submitDeliverable({ signer, escrowId, deliverableHash, age
   return { receipt };
 }
 
-export async function verifyAndSettle({ signer, escrowId, success = true, qualityScore = 100, agentAddress, onStatus }) {
-  const { escrow } = getContracts(signer);
+export async function verifyAndSettle({ signer, escrowId, success = true, qualityScore = 100, agentAddress, onStatus, chainId = DEFAULT_CHAIN_ID }) {
+  const { escrow } = getContracts(signer, chainId);
   const normalizedQualityScore = Math.max(0, Math.min(100, Math.round(Number(qualityScore) || 0)));
   onStatus?.('Verifying and settling escrow...');
   const tx = await escrow.verifyAndSettle(BigInt(escrowId), success, BigInt(normalizedQualityScore));
@@ -286,12 +284,12 @@ export async function verifyAndSettle({ signer, escrowId, success = true, qualit
   return { receipt };
 }
 
-export async function fetchEscrowDetails(provider, escrowId) {
+export async function fetchEscrowDetails(provider, escrowId, chainId = DEFAULT_CHAIN_ID) {
   if (!provider) {
     throw new Error('A provider is required to read escrow details.');
   }
 
-  const { escrow } = getContracts(provider);
+  const { escrow } = getContracts(provider, chainId);
   const normalizedEscrowId = BigInt(escrowId);
   const details = await escrow.getEscrow(normalizedEscrowId);
 
@@ -378,12 +376,12 @@ const EVENT_MAPPERS = [
   },
 ];
 
-export async function fetchAgentHistory(provider, address) {
+export async function fetchAgentHistory(provider, address, chainId = DEFAULT_CHAIN_ID) {
   if (!provider || !ethers.isAddress(address)) {
     return [];
   }
 
-  const { escrow, stakeRegistry } = getContracts(provider);
+  const { escrow, stakeRegistry } = getContracts(provider, chainId);
   const normalizedAddress = address.toLowerCase();
 
   const registryGroupedLogs = await Promise.all(

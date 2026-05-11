@@ -7,6 +7,7 @@ import { EmptyState } from '../components/EmptyState';
 import { LoadingState } from '../components/LoadingState';
 import { SectionHeader } from '../components/SectionHeader';
 import { StatusBadge } from '../components/StatusBadge';
+import { getNetworkConfig } from '../config/contracts';
 import { useWallet } from '../contexts/WalletContext';
 import { fetchIndexedAgent } from '../lib/api';
 import { hydrateAgent } from '../lib/agent';
@@ -22,9 +23,10 @@ export function CreateEscrowPage() {
     hasWallet,
     isConnecting,
     isWrongNetwork,
+    readChainId,
     readProvider,
     signer,
-    switchToBaseSepolia,
+    switchToBase,
   } = useWallet();
 
   const [agent, setAgent] = useState(null);
@@ -38,6 +40,7 @@ export function CreateEscrowPage() {
     specText: '',
     deadline: buildDefaultDeadlineInput(),
   });
+  const activeNetwork = getNetworkConfig(readChainId);
 
   useEffect(() => {
     let ignore = false;
@@ -54,7 +57,7 @@ export function CreateEscrowPage() {
             }
             throw requestError;
           }),
-          fetchOnChainAgent(readProvider, agentAddress).catch(() => null),
+          fetchOnChainAgent(readProvider, agentAddress, readChainId).catch(() => null),
         ]);
 
         if (!indexedAgent && !onChainAgent) {
@@ -81,7 +84,7 @@ export function CreateEscrowPage() {
     return () => {
       ignore = true;
     };
-  }, [agentAddress, readProvider]);
+  }, [agentAddress, readChainId, readProvider]);
 
   const specHashPreview = useMemo(() => {
     const source = form.specText.trim();
@@ -102,8 +105,8 @@ export function CreateEscrowPage() {
     }
 
     if (isWrongNetwork) {
-      await switchToBaseSepolia();
-      setStatus({ tone: 'info', message: 'Switching to Base Sepolia. Submit again once the network change completes.' });
+      await switchToBase();
+      setStatus({ tone: 'info', message: 'Switching to Base. Submit again once the network change completes.' });
       return;
     }
 
@@ -139,6 +142,7 @@ export function CreateEscrowPage() {
         paymentAmount: form.paymentAmount,
         specHash: ethers.keccak256(ethers.toUtf8Bytes(form.specText.trim())),
         deadlineTimestamp,
+        chainId: readChainId,
         onStatus: (message) => setStatus({ tone: 'info', message }),
       });
 
@@ -178,7 +182,7 @@ export function CreateEscrowPage() {
       <SectionHeader
         eyebrow="Escrow Creation"
         title={`Create funded escrow for ${agent.name}`}
-        description="Lock Mock USDC on Base Sepolia against a hashed service specification, then move the engagement into the verifiable delivery workflow."
+        description={`Lock ${activeNetwork.tokenLabel} on ${activeNetwork.chainName} against a hashed service specification, then move the engagement into the verifiable delivery workflow.`}
       />
 
       {walletError ? <Banner tone="warning" message={walletError} /> : null}
@@ -197,7 +201,7 @@ export function CreateEscrowPage() {
               <div className="text-xs font-semibold uppercase tracking-[0.32em] text-primary">Wallet Required</div>
               <h2 className="mt-2 font-display text-3xl font-bold tracking-[-0.06em] text-text">Connect MetaMask to create escrow.</h2>
               <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-300/76">
-                The buyer wallet signs the approval, escrow creation, and funding transactions on Base Sepolia.
+                {`The buyer wallet signs the approval, escrow creation, and funding transactions on ${activeNetwork.chainName}.`}
               </p>
             </div>
             <button
@@ -280,7 +284,7 @@ export function CreateEscrowPage() {
             </div>
 
             <div className="rounded-3xl border border-primary/12 bg-primary/8 p-5 text-sm leading-7 text-slate-300/76">
-              Escrow creation performs the full on-chain flow: approve Mock USDC to the escrow contract, create the escrow agreement, then fund it in a second transaction step.
+              {`Escrow creation performs the full on-chain flow: approve ${activeNetwork.tokenLabel} to the escrow contract, create the escrow agreement, then fund it in a second transaction step.`}
             </div>
 
             <button
@@ -326,7 +330,7 @@ export function CreateEscrowPage() {
 
             <div className="mt-6 grid gap-3 sm:grid-cols-2">
               <MetricCard label="Stake" value={formatUsdcCompact(agent.stake)} />
-              <MetricCard label="Assay Score" value={agent.assayScore.toLocaleString()} />
+              <MetricCard label="Assay Score" value={`${Math.round(agent.assayScore / 10).toLocaleString()} / 1,000`} />
             </div>
           </article>
 

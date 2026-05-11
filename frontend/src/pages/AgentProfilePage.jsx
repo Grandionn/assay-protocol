@@ -17,6 +17,7 @@ import { SectionHeader } from '../components/SectionHeader';
 import { SkeletonCard, SkeletonLine, SkeletonScoreRing } from '../components/Skeleton';
 import { StatusBadge } from '../components/StatusBadge';
 import { useWallet } from '../contexts/WalletContext';
+import { getNetworkConfig } from '../config/contracts';
 import { fetchAgentTransactions, fetchIndexedAgent } from '../lib/api';
 import { hydrateAgent } from '../lib/agent';
 import { fetchAgentStats, fetchOnChainAgent, fetchOnChainScore } from '../lib/contracts';
@@ -24,13 +25,15 @@ import { formatDateTime, formatPercent, formatUsdc, formatUsdcCompact, truncateA
 
 export function AgentProfilePage() {
   const { address } = useParams();
-  const { readProvider } = useWallet();
+  const { explorerBaseUrl, readChainId, readProvider } = useWallet();
   const [agent, setAgent] = useState(null);
   const [agentStats, setAgentStats] = useState(null);
   const [history, setHistory] = useState([]);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+
+  const activeNetwork = getNetworkConfig(readChainId);
 
   useEffect(() => {
     let ignore = false;
@@ -47,9 +50,9 @@ export function AgentProfilePage() {
             }
             throw requestError;
           }),
-          fetchOnChainAgent(readProvider, address).catch(() => null),
-          fetchOnChainScore(readProvider, address).catch(() => null),
-          fetchAgentStats(readProvider, address).catch(() => null),
+          fetchOnChainAgent(readProvider, address, readChainId).catch(() => null),
+          fetchOnChainScore(readProvider, address, readChainId).catch(() => null),
+          fetchAgentStats(readProvider, address, readChainId).catch(() => null),
         ]);
 
         if (!indexedAgent && !onChainAgent) {
@@ -120,7 +123,7 @@ export function AgentProfilePage() {
     return () => {
       ignore = true;
     };
-  }, [address, readProvider]);
+  }, [address, readChainId, readProvider]);
 
   async function handleCopyAddress() {
     if (!agent?.address || !navigator.clipboard) {
@@ -270,7 +273,7 @@ export function AgentProfilePage() {
               </div>
             </div>
             <div className="rounded-2xl border border-white/6 bg-white/4 p-4 text-sm leading-7 text-slate-300/78">
-              Live data from Base Sepolia testnet.
+              {`Live data from ${activeNetwork.chainName}${activeNetwork.isTestnet ? ' testnet' : ''}.`}
             </div>
           </div>
         </article>
@@ -390,7 +393,7 @@ export function AgentProfilePage() {
                     <td className="px-6 py-4 text-right">
                       {row.hash ? (
                         <a
-                          href={`https://sepolia.basescan.org/tx/${row.hash}`}
+                          href={`${explorerBaseUrl}/tx/${row.hash}`}
                           target="_blank"
                           rel="noreferrer"
                           className="inline-flex items-center gap-2 text-primary transition hover:text-sky-200"

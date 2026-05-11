@@ -5,6 +5,7 @@ import { Link, useParams } from 'react-router-dom';
 import { EmptyState } from '../components/EmptyState';
 import { LoadingState } from '../components/LoadingState';
 import { SectionHeader } from '../components/SectionHeader';
+import { getNetworkConfig } from '../config/contracts';
 import { useWallet } from '../contexts/WalletContext';
 import { fetchIndexedAgent, registerIndexedAgent } from '../lib/api';
 import { hydrateAgent } from '../lib/agent';
@@ -27,9 +28,10 @@ export function EscrowDetailPage() {
     hasWallet,
     isConnecting,
     isWrongNetwork,
+    readChainId,
     readProvider,
     signer,
-    switchToBaseSepolia,
+    switchToBase,
   } = useWallet();
 
   const [escrow, setEscrow] = useState(null);
@@ -41,6 +43,7 @@ export function EscrowDetailPage() {
   const [status, setStatus] = useState({ tone: '', message: '' });
   const [deliverableText, setDeliverableText] = useState('');
   const [qualityScore, setQualityScore] = useState('100');
+  const activeNetwork = getNetworkConfig(readChainId);
 
   async function loadEscrowState() {
     if (!readProvider) {
@@ -51,9 +54,9 @@ export function EscrowDetailPage() {
     setError('');
 
     try {
-      const details = await fetchEscrowDetails(readProvider, escrowId);
+      const details = await fetchEscrowDetails(readProvider, escrowId, readChainId);
       const verifierFlag = walletAddress
-        ? await getContracts(readProvider).escrow.isAuthorizedVerifier(walletAddress)
+        ? await getContracts(readProvider, readChainId).escrow.isAuthorizedVerifier(walletAddress)
         : false;
       const indexedAgent = await fetchIndexedAgent(details.agent).catch(() => null);
 
@@ -71,7 +74,7 @@ export function EscrowDetailPage() {
 
   useEffect(() => {
     loadEscrowState();
-  }, [readProvider, walletAddress, escrowId]);
+  }, [readChainId, readProvider, walletAddress, escrowId]);
 
   const isAgent = useMemo(() => {
     if (!walletAddress || !escrow?.agent) {
@@ -98,8 +101,8 @@ export function EscrowDetailPage() {
     }
 
     if (isWrongNetwork) {
-      await switchToBaseSepolia();
-      setStatus({ tone: 'info', message: 'Switching to Base Sepolia. Submit the deliverable again once the network change completes.' });
+      await switchToBase();
+      setStatus({ tone: 'info', message: 'Switching to Base. Submit the deliverable again once the network change completes.' });
       return;
     }
 
@@ -115,6 +118,7 @@ export function EscrowDetailPage() {
         escrowId: escrow.escrowId,
         agentAddress: escrow.agent,
         deliverableHash: ethers.keccak256(ethers.toUtf8Bytes(deliverableText.trim())),
+        chainId: readChainId,
         onStatus: (message) => setStatus({ tone: 'info', message }),
       });
       setDeliverableText('');
@@ -139,8 +143,8 @@ export function EscrowDetailPage() {
     }
 
     if (isWrongNetwork) {
-      await switchToBaseSepolia();
-      setStatus({ tone: 'info', message: 'Switching to Base Sepolia. Verify again once the network change completes.' });
+      await switchToBase();
+      setStatus({ tone: 'info', message: 'Switching to Base. Verify again once the network change completes.' });
       return;
     }
 
@@ -152,10 +156,11 @@ export function EscrowDetailPage() {
         success: true,
         qualityScore,
         agentAddress: escrow.agent,
+        chainId: readChainId,
         onStatus: (message) => setStatus({ tone: 'info', message }),
       });
 
-      const updatedScore = await fetchOnChainScore(readProvider, escrow.agent);
+      const updatedScore = await fetchOnChainScore(readProvider, escrow.agent, readChainId);
       if (updatedScore != null) {
         const indexedAgent = await fetchIndexedAgent(escrow.agent).catch(() => null);
         const sourceAgent = indexedAgent?.agent ?? agentProfile;
@@ -185,7 +190,7 @@ export function EscrowDetailPage() {
     return (
       <EmptyState
         title="Escrow unavailable"
-        description={error || 'The requested escrow could not be read from Base Sepolia.'}
+        description={error || `The requested escrow could not be read from ${activeNetwork.chainName}.`}
         action={
           <Link
             to="/discover"
@@ -216,7 +221,7 @@ export function EscrowDetailPage() {
             <div>
               <div className="text-xs font-semibold uppercase tracking-[0.32em] text-primary">Action Gate</div>
               <p className="mt-2 text-sm leading-7 text-slate-300/76">
-                Connect MetaMask to submit deliverables or verify settlement. Read-only escrow data is still loaded from the injected Base Sepolia provider.
+                {`Connect MetaMask to submit deliverables or verify settlement. Read-only escrow data is still loaded from the configured ${activeNetwork.chainName} provider.`}
               </p>
             </div>
             <button
@@ -249,7 +254,7 @@ export function EscrowDetailPage() {
             <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               <InfoCard label="Buyer" value={truncateAddress(escrow.buyer, 8, 6)} helper={escrow.buyer} />
               <InfoCard label="Agent" value={truncateAddress(escrow.agent, 8, 6)} helper={escrow.agent} />
-              <InfoCard label="Payment" value={formatUsdc(escrow.amount)} helper="Locked Mock USDC" />
+              <InfoCard label="Payment" value={formatUsdc(escrow.amount)} helper={`Locked ${activeNetwork.tokenLabel}`} />
               <InfoCard label="Deadline" value={formatDateTime(Number(escrow.deadline))} helper="Settlement deadline" />
               <InfoCard label="Created" value={formatDateTime(Number(escrow.createdAt))} helper="Escrow agreement created" />
               <InfoCard

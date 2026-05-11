@@ -9,7 +9,7 @@ import { ESCROW_STATUS_LABELS, fetchEscrowDetails, getContracts } from '../lib/c
 import { formatDateTime, formatUsdc, truncateAddress } from '../lib/format';
 
 export function MyEscrowsPage() {
-  const { address, readProvider, connectWallet, hasWallet } = useWallet();
+  const { address, readChainId, readProvider, connectWallet, hasWallet } = useWallet();
   const [escrows, setEscrows] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -31,7 +31,7 @@ export function MyEscrowsPage() {
       setError('');
 
       try {
-        const { escrow } = getContracts(readProvider);
+        const { escrow } = getContracts(readProvider, readChainId);
         const nextId = await escrow.nextEscrowId();
         const totalEscrows = Number(nextId);
 
@@ -44,7 +44,7 @@ export function MyEscrowsPage() {
 
         const details = await Promise.all(
           Array.from({ length: totalEscrows }, (_, index) =>
-            fetchEscrowDetails(readProvider, index).catch(() => null),
+            fetchEscrowDetails(readProvider, index, readChainId).catch(() => null),
           ),
         );
 
@@ -83,7 +83,7 @@ export function MyEscrowsPage() {
     return () => {
       ignore = true;
     };
-  }, [readProvider, address]);
+  }, [readChainId, readProvider, address]);
 
   if (!address) {
     return (
