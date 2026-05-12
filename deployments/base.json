@@ -1,11 +1,13 @@
 {
   "network": "base",
-  "deployedAt": "2026-05-11T09:19:21.5612291Z",
+  "deployedAt": "2026-05-12T10:38:00.783Z",
   "deployer": "0x328F5a2169D803211dC24aC6576FbE2545a9b51e",
+  "treasury": "0x328F5a2169D803211dC24aC6576FbE2545a9b51e",
   "contracts": {
+    "USDC": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
     "AssayStakeRegistry": "0x2589D201414A4658eFED96ea34841fBE31416bb8",
     "AssayReputation": "0x713F6aa4D833A1943fE55032ABc647c72501949E",
-    "AssayEscrow": "0xC0Ce47838aCF7Dfb77ae3a6161B552604Ae8aaEe"
-  },
-  "treasury": "0x328F5a2169D803211dC24aC6576FbE2545a9b51e"
+    "AssayEscrow": "0x797b3e1C41fcA5ee5CB56bA7E2454e4545C6D70F",
+    "DeprecatedAssayEscrow": "0xC0Ce47838aCF7Dfb77ae3a6161B552604Ae8aaEe"
+  }
 }

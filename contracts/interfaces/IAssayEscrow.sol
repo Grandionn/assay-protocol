@@ -5,12 +5,13 @@ pragma solidity 0.8.24;
 /// @notice Interface for querying escrow state
 interface IAssayEscrow {
     enum EscrowStatus {
-        Created,    // created, awaiting funding
+        Created,    // created, awaiting agent acceptance
+        Accepted,   // accepted by agent, awaiting buyer funding
         Funded,     // buyer funded, awaiting agent delivery
         Submitted,  // agent submitted deliverable hash, awaiting verification
-        Settled,    // verified complete — payment released to agent
-        Refunded,   // failed or expired — payment returned to buyer + stake slashed
-        Disputed    // escalated to arbitration (future extension point)
+        Settled,    // verified complete - payment released to agent
+        Refunded,   // failed or expired - payment returned to buyer + stake slashed
+        Cancelled   // cancelled before funding
     }
 
     /// @notice Returns the current status of an escrow

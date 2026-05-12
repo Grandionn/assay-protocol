@@ -179,11 +179,12 @@ export function MyEscrowsPage() {
 function EscrowStatusPill({ status }) {
   const styles = {
     Created: 'border-primary/25 bg-primary/10 text-primary',
+    Accepted: 'border-primary/25 bg-primary/6 text-text',
     Funded: 'border-sky-400/25 bg-sky-400/10 text-sky-200',
     Submitted: 'border-warning/25 bg-warning/10 text-warning',
     Settled: 'border-success/25 bg-success/10 text-success',
     Refunded: 'border-danger/25 bg-danger/10 text-danger',
-    Disputed: 'border-white/10 bg-white/6 text-text',
+    Cancelled: 'border-white/10 bg-white/6 text-text',
   };
 
   const resolvedStatus = ESCROW_STATUS_LABELS.includes(status) ? status : 'Created';

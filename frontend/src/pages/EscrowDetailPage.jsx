@@ -10,8 +10,11 @@ import { useWallet } from '../contexts/WalletContext';
 import { fetchIndexedAgent, registerIndexedAgent } from '../lib/api';
 import { hydrateAgent } from '../lib/agent';
 import {
+  acceptEscrow,
+  cancelEscrow,
   fetchEscrowDetails,
   fetchOnChainScore,
+  fundEscrow,
   getContracts,
   parseWalletError,
   submitDeliverable,
@@ -84,8 +87,123 @@ export function EscrowDetailPage() {
     return walletAddress.toLowerCase() === escrow.agent.toLowerCase();
   }, [escrow?.agent, walletAddress]);
 
+  const isBuyer = useMemo(() => {
+    if (!walletAddress || !escrow?.buyer) {
+      return false;
+    }
+
+    return walletAddress.toLowerCase() === escrow.buyer.toLowerCase();
+  }, [escrow?.buyer, walletAddress]);
+
+  const canAcceptEscrow = Boolean(signer) && isAgent && escrow?.statusLabel === 'Created';
+  const canFundEscrow = Boolean(signer) && isBuyer && escrow?.statusLabel === 'Accepted';
+  const canCancelEscrow = Boolean(signer) && isBuyer && ['Created', 'Accepted'].includes(escrow?.statusLabel ?? '');
   const canSubmitDeliverable = Boolean(signer) && isAgent && escrow?.statusLabel === 'Funded';
   const canVerifySettlement = Boolean(signer) && isAuthorizedVerifier && escrow?.statusLabel === 'Submitted';
+
+  async function handleAcceptEscrow() {
+    if (isActing) {
+      return;
+    }
+
+    if (!walletAddress || !signer) {
+      await connectWallet();
+      setStatus({ tone: 'info', message: 'Wallet connection requested. Confirm MetaMask, then accept the escrow.' });
+      return;
+    }
+
+    if (isWrongNetwork) {
+      await switchToBase();
+      setStatus({ tone: 'info', message: 'Switching to Base Mainnet. Accept the escrow again once the network change completes.' });
+      return;
+    }
+
+    try {
+      setIsActing(true);
+      await acceptEscrow({
+        signer,
+        escrowId: escrow.escrowId,
+        chainId: readChainId,
+        onStatus: (message) => setStatus({ tone: 'info', message }),
+      });
+      setStatus({ tone: 'success', message: 'Escrow accepted on-chain. The buyer can now fund it.' });
+      await loadEscrowState();
+    } catch (acceptError) {
+      setStatus({ tone: 'error', message: parseWalletError(acceptError) });
+    } finally {
+      setIsActing(false);
+    }
+  }
+
+  async function handleFundEscrow() {
+    if (isActing) {
+      return;
+    }
+
+    if (!walletAddress || !signer) {
+      await connectWallet();
+      setStatus({ tone: 'info', message: 'Wallet connection requested. Confirm MetaMask, then fund the escrow.' });
+      return;
+    }
+
+    if (isWrongNetwork) {
+      await switchToBase();
+      setStatus({ tone: 'info', message: 'Switching to Base Mainnet. Fund the escrow again once the network change completes.' });
+      return;
+    }
+
+    try {
+      setIsActing(true);
+      await fundEscrow({
+        signer,
+        escrowId: escrow.escrowId,
+        paymentAmount: escrow.amount,
+        agentAddress: escrow.agent,
+        chainId: readChainId,
+        onStatus: (message) => setStatus({ tone: 'info', message }),
+      });
+      setStatus({ tone: 'success', message: 'Escrow funded on-chain. The agent can now submit the deliverable.' });
+      await loadEscrowState();
+    } catch (fundError) {
+      setStatus({ tone: 'error', message: parseWalletError(fundError) });
+    } finally {
+      setIsActing(false);
+    }
+  }
+
+  async function handleCancelEscrow() {
+    if (isActing) {
+      return;
+    }
+
+    if (!walletAddress || !signer) {
+      await connectWallet();
+      setStatus({ tone: 'info', message: 'Wallet connection requested. Confirm MetaMask, then cancel the escrow.' });
+      return;
+    }
+
+    if (isWrongNetwork) {
+      await switchToBase();
+      setStatus({ tone: 'info', message: 'Switching to Base Mainnet. Cancel the escrow again once the network change completes.' });
+      return;
+    }
+
+    try {
+      setIsActing(true);
+      await cancelEscrow({
+        signer,
+        escrowId: escrow.escrowId,
+        chainId: readChainId,
+        onStatus: (message) => setStatus({ tone: 'info', message }),
+      });
+      setStatus({ tone: 'success', message: 'Escrow cancelled on-chain before any funds were locked.' });
+      await loadEscrowState();
+    } catch (cancelError) {
+      setStatus({ tone: 'error', message: parseWalletError(cancelError) });
+    } finally {
+      setIsActing(false);
+    }
+  }
 
   async function handleSubmitDeliverable(event) {
     event.preventDefault();
@@ -221,7 +339,7 @@ export function EscrowDetailPage() {
             <div>
               <div className="text-xs font-semibold uppercase tracking-[0.32em] text-primary">Action Gate</div>
               <p className="mt-2 text-sm leading-7 text-slate-300/76">
-                {`Connect MetaMask to submit deliverables or verify settlement. Read-only escrow data is still loaded from the configured ${activeNetwork.chainName} provider.`}
+                {`Connect MetaMask to accept, fund, cancel, submit deliverables, or verify settlement. Read-only escrow data is still loaded from the configured ${activeNetwork.chainName} provider.`}
               </p>
             </div>
             <button
@@ -254,7 +372,17 @@ export function EscrowDetailPage() {
             <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               <InfoCard label="Buyer" value={truncateAddress(escrow.buyer, 8, 6)} helper={escrow.buyer} />
               <InfoCard label="Agent" value={truncateAddress(escrow.agent, 8, 6)} helper={escrow.agent} />
-              <InfoCard label="Payment" value={formatUsdc(escrow.amount)} helper={`Locked ${activeNetwork.tokenLabel}`} />
+              <InfoCard
+                label="Payment"
+                value={formatUsdc(escrow.amount)}
+                helper={
+                  escrow.statusLabel === 'Cancelled'
+                    ? 'No funds were locked'
+                    : ['Funded', 'Submitted', 'Settled', 'Refunded'].includes(escrow.statusLabel)
+                      ? `Locked ${activeNetwork.tokenLabel}`
+                      : `Pending funding in ${activeNetwork.tokenLabel}`
+                }
+              />
               <InfoCard label="Deadline" value={formatDateTime(Number(escrow.deadline))} helper="Settlement deadline" />
               <InfoCard label="Created" value={formatDateTime(Number(escrow.createdAt))} helper="Escrow agreement created" />
               <InfoCard
@@ -293,6 +421,80 @@ export function EscrowDetailPage() {
         </div>
 
         <div className="space-y-6">
+          {canAcceptEscrow ? (
+            <article className="panel rounded-[32px] p-6 md:p-8">
+              <div className="mb-5 flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                  <CheckCircle2 size={18} />
+                </div>
+                <div>
+                  <div className="text-xs font-semibold uppercase tracking-[0.32em] text-primary">Agent Action</div>
+                  <h3 className="mt-1 font-display text-2xl font-bold tracking-[-0.05em] text-text">Accept Escrow</h3>
+                </div>
+              </div>
+
+              <p className="text-sm leading-7 text-slate-300/78">
+                Accept this engagement to confirm consent. Once accepted, the buyer can lock funds and move the escrow into the delivery workflow.
+              </p>
+
+              <button
+                type="button"
+                onClick={handleAcceptEscrow}
+                disabled={isActing}
+                className="electric-button mt-6 inline-flex w-full items-center justify-center gap-3 rounded-2xl px-5 py-4 text-sm font-semibold uppercase tracking-[0.28em] transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-70"
+              >
+                {isActing ? <LoaderCircle size={18} className="animate-spin" /> : <CheckCircle2 size={18} />}
+                {isActing ? 'Accepting' : 'Accept Escrow'}
+              </button>
+            </article>
+          ) : null}
+
+          {canFundEscrow || canCancelEscrow ? (
+            <article className="panel rounded-[32px] p-6 md:p-8">
+              <div className="mb-5 flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                  <Wallet size={18} />
+                </div>
+                <div>
+                  <div className="text-xs font-semibold uppercase tracking-[0.32em] text-primary">Buyer Action</div>
+                  <h3 className="mt-1 font-display text-2xl font-bold tracking-[-0.05em] text-text">
+                    {canFundEscrow ? 'Fund or Cancel' : 'Cancel Escrow'}
+                  </h3>
+                </div>
+              </div>
+
+              <p className="text-sm leading-7 text-slate-300/78">
+                {canFundEscrow
+                  ? `The agent accepted this escrow. You can now approve ${activeNetwork.tokenLabel} and lock the payment, or cancel before funds are deposited.`
+                  : 'This escrow is still pending agent acceptance, so you can cancel it before any funds are locked.'}
+              </p>
+
+              <div className="mt-6 flex flex-col gap-3">
+                {canFundEscrow ? (
+                  <button
+                    type="button"
+                    onClick={handleFundEscrow}
+                    disabled={isActing}
+                    className="electric-button inline-flex w-full items-center justify-center gap-3 rounded-2xl px-5 py-4 text-sm font-semibold uppercase tracking-[0.28em] transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-70"
+                  >
+                    {isActing ? <LoaderCircle size={18} className="animate-spin" /> : <Wallet size={18} />}
+                    {isActing ? 'Funding' : 'Fund Escrow'}
+                  </button>
+                ) : null}
+
+                <button
+                  type="button"
+                  onClick={handleCancelEscrow}
+                  disabled={isActing}
+                  className="inline-flex w-full items-center justify-center gap-3 rounded-2xl border border-danger/25 px-5 py-4 text-sm font-semibold uppercase tracking-[0.28em] text-danger transition hover:bg-danger/10 disabled:cursor-not-allowed disabled:opacity-70"
+                >
+                  {isActing ? <LoaderCircle size={18} className="animate-spin" /> : <Wallet size={18} />}
+                  {isActing ? 'Cancelling' : 'Cancel Escrow'}
+                </button>
+              </div>
+            </article>
+          ) : null}
+
           {canSubmitDeliverable ? (
             <form onSubmit={handleSubmitDeliverable} className="panel rounded-[32px] p-6 md:p-8">
               <div className="mb-5 flex items-center gap-3">
@@ -365,12 +567,14 @@ export function EscrowDetailPage() {
             </article>
           ) : null}
 
-          {!canSubmitDeliverable && !canVerifySettlement ? (
+          {!canAcceptEscrow && !canFundEscrow && !canCancelEscrow && !canSubmitDeliverable && !canVerifySettlement ? (
             <article className="panel rounded-[32px] p-6 md:p-8">
               <div className="text-xs font-semibold uppercase tracking-[0.32em] text-primary">Current Action Window</div>
               <p className="mt-3 text-sm leading-7 text-slate-300/78">
                 {escrow.statusLabel === 'Created'
-                  ? 'The escrow agreement exists but still needs buyer funding.'
+                  ? 'The escrow request is waiting for the named agent to accept before the buyer can fund it.'
+                  : escrow.statusLabel === 'Accepted'
+                    ? 'The agent accepted this escrow. The buyer can now fund it or cancel before locking funds.'
                   : escrow.statusLabel === 'Funded'
                     ? 'The escrow is funded and waiting for the agent wallet to submit a deliverable hash.'
                     : escrow.statusLabel === 'Submitted'
@@ -379,6 +583,8 @@ export function EscrowDetailPage() {
                         ? 'Escrow settled. Assay Score will update.'
                         : escrow.statusLabel === 'Refunded'
                           ? 'This escrow has already been refunded on-chain.'
+                          : escrow.statusLabel === 'Cancelled'
+                            ? 'This escrow was cancelled before funding and has no locked funds.'
                           : 'No additional action is exposed in the current UI for this escrow state.'}
               </p>
             </article>
@@ -410,11 +616,12 @@ function Banner({ tone, message }) {
 function EscrowStatusPill({ status }) {
   const styles = {
     Created: 'border-primary/25 bg-primary/10 text-primary',
+    Accepted: 'border-primary/25 bg-primary/6 text-text',
     Funded: 'border-sky-400/25 bg-sky-400/10 text-sky-200',
     Submitted: 'border-warning/25 bg-warning/10 text-warning',
     Settled: 'border-success/25 bg-success/10 text-success',
     Refunded: 'border-danger/25 bg-danger/10 text-danger',
-    Disputed: 'border-white/10 bg-white/6 text-text',
+    Cancelled: 'border-white/10 bg-white/6 text-text',
   };
 
   return (

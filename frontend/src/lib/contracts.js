@@ -9,7 +9,17 @@ import { formatDateTime, formatUsdc } from './format';
 
 const DEPLOY_BLOCK = 39_430_000;
 
-export const ESCROW_STATUS_LABELS = ['Created', 'Funded', 'Submitted', 'Settled', 'Refunded', 'Disputed'];
+export const ESCROW_STATUS = Object.freeze({
+  Created: 0,
+  Accepted: 1,
+  Funded: 2,
+  Submitted: 3,
+  Settled: 4,
+  Refunded: 5,
+  Cancelled: 6,
+});
+
+export const ESCROW_STATUS_LABELS = ['Created', 'Accepted', 'Funded', 'Submitted', 'Settled', 'Refunded', 'Cancelled'];
 
 export function getEscrowStatusLabel(status) {
   const normalizedStatus = typeof status === 'bigint' ? Number(status) : Number(status ?? 0);
@@ -120,9 +130,8 @@ export async function registerAgent({ signer, agentAddress, capability, stakeAmo
   };
 }
 
-export async function createAndFundEscrow({ signer, agentAddress, paymentAmount, specHash, deadlineTimestamp, onStatus, chainId = BASE_MAINNET_CHAIN_ID }) {
-  const { escrow, stakeRegistry, usdc } = getContracts(signer, chainId);
-  const contractAddresses = getContractAddresses();
+export async function createEscrowRequest({ signer, agentAddress, paymentAmount, specHash, deadlineTimestamp, onStatus, chainId = BASE_MAINNET_CHAIN_ID }) {
+  const { escrow, stakeRegistry } = getContracts(signer, chainId);
   const paymentMicro = ethers.parseUnits(paymentAmount, 6);
   const buyerAddress = await signer.getAddress();
   const normalizedDeadline = BigInt(deadlineTimestamp);
@@ -148,7 +157,7 @@ export async function createAndFundEscrow({ signer, agentAddress, paymentAmount,
     throw new Error('Create escrow failed: the selected agent is not active on the StakeRegistry.');
   }
 
-  onStatus?.('Step 1/3: Creating escrow on-chain...');
+  onStatus?.('Step 1/1: Creating escrow request on-chain...');
 
   let createReceipt;
   try {
@@ -158,35 +167,7 @@ export async function createAndFundEscrow({ signer, agentAddress, paymentAmount,
     throw new Error(formatEscrowStepError('Create escrow', escrow, error));
   }
 
-  const allowance = await usdc.allowance(buyerAddress, contractAddresses.escrow);
-  if (allowance < paymentMicro) {
-    onStatus?.('Step 2/3: Approving USDC for escrow...');
-    try {
-      const approveTx = await usdc.approve(contractAddresses.escrow, paymentMicro);
-      await approveTx.wait();
-    } catch (error) {
-      throw new Error(`Approve escrow allowance failed: ${parseWalletError(error)}`);
-    }
-  }
-
-  const createdEvent = createReceipt.logs
-    .map((log) => {
-      try {
-        return escrow.interface.parseLog(log);
-      } catch {
-        return null;
-      }
-    })
-    .find((parsed) => parsed?.name === 'EscrowCreated');
-
-  let escrowId = createdEvent?.args?.escrowId ?? createdEvent?.args?.[0] ?? null;
-
-  if (escrowId == null) {
-    const nextEscrowId = await escrow.nextEscrowId();
-    if (nextEscrowId > 0n) {
-      escrowId = nextEscrowId - 1n;
-    }
-  }
+  let escrowId = await resolveEscrowId(escrow, createReceipt);
 
   if (escrowId == null) {
     throw new Error('Escrow creation succeeded but the escrow ID could not be resolved from logs.');
@@ -206,11 +187,57 @@ export async function createAndFundEscrow({ signer, agentAddress, paymentAmount,
     // Never block escrow creation on ledger sync.
   }
 
-  onStatus?.('Step 3/3: Funding escrow...');
-  let fundReceipt;
+  return {
+    escrowId: BigInt(escrowId),
+    paymentMicro,
+    createReceipt,
+  };
+}
+
+export async function acceptEscrow({ signer, escrowId, onStatus, chainId = BASE_MAINNET_CHAIN_ID }) {
+  const { escrow } = getContracts(signer, chainId);
+  const normalizedEscrowId = BigInt(escrowId);
+
+  onStatus?.('Accepting escrow on-chain...');
+
   try {
-    const fundTx = await escrow.fundEscrow(escrowId);
-    fundReceipt = await fundTx.wait();
+    const tx = await escrow.acceptEscrow(normalizedEscrowId);
+    const receipt = await tx.wait();
+    return { receipt };
+  } catch (error) {
+    throw new Error(formatEscrowStepError('Accept escrow', escrow, error));
+  }
+}
+
+export async function fundEscrow({ signer, escrowId, paymentAmount, agentAddress, onStatus, chainId = BASE_MAINNET_CHAIN_ID }) {
+  const { escrow, usdc } = getContracts(signer, chainId);
+  const contractAddresses = getContractAddresses();
+  const buyerAddress = await signer.getAddress();
+  const normalizedEscrowId = BigInt(escrowId);
+  let paymentMicro = paymentAmount != null ? BigInt(paymentAmount) : null;
+
+  if (paymentMicro == null) {
+    const details = await escrow.getEscrow(normalizedEscrowId);
+    paymentMicro = details.amount;
+  }
+
+  const allowance = await usdc.allowance(buyerAddress, contractAddresses.escrow);
+  if (allowance < paymentMicro) {
+    onStatus?.('Step 1/2: Approving USDC for escrow...');
+    try {
+      const approveTx = await usdc.approve(contractAddresses.escrow, paymentMicro);
+      await approveTx.wait();
+    } catch (error) {
+      throw new Error(`Approve escrow allowance failed: ${parseWalletError(error)}`);
+    }
+  }
+
+  onStatus?.('Step 2/2: Funding accepted escrow...');
+
+  let receipt;
+  try {
+    const tx = await escrow.fundEscrow(normalizedEscrowId);
+    receipt = await tx.wait();
   } catch (error) {
     throw new Error(formatEscrowStepError('Fund escrow', escrow, error));
   }
@@ -218,11 +245,11 @@ export async function createAndFundEscrow({ signer, agentAddress, paymentAmount,
   try {
     await recordTransaction({
       agentAddress,
-      txHash: fundReceipt.hash ?? fundReceipt.transactionHash,
+      txHash: receipt.hash ?? receipt.transactionHash,
       method: 'ESCROW_FUNDED',
       label: 'Escrow Funded',
       amount: paymentMicro.toString(),
-      escrowId: escrowId?.toString(),
+      escrowId: normalizedEscrowId.toString(),
       timestamp: Math.floor(Date.now() / 1000),
     });
   } catch {
@@ -230,11 +257,24 @@ export async function createAndFundEscrow({ signer, agentAddress, paymentAmount,
   }
 
   return {
-    escrowId: BigInt(escrowId),
     paymentMicro,
-    createReceipt,
-    fundReceipt,
+    receipt,
   };
+}
+
+export async function cancelEscrow({ signer, escrowId, onStatus, chainId = BASE_MAINNET_CHAIN_ID }) {
+  const { escrow } = getContracts(signer, chainId);
+  const normalizedEscrowId = BigInt(escrowId);
+
+  onStatus?.('Cancelling escrow on-chain...');
+
+  try {
+    const tx = await escrow.cancelEscrow(normalizedEscrowId);
+    const receipt = await tx.wait();
+    return { receipt };
+  } catch (error) {
+    throw new Error(formatEscrowStepError('Cancel escrow', escrow, error));
+  }
 }
 
 export async function submitDeliverable({ signer, escrowId, deliverableHash, agentAddress, onStatus, chainId = BASE_MAINNET_CHAIN_ID }) {
@@ -464,7 +504,7 @@ export async function fetchAgentHistory(provider, address, chainId = BASE_MAINNE
             });
           }
 
-          if (status === 3) {
+          if (status === ESCROW_STATUS.Settled) {
             rows.push({
               escrowId,
               hash: null,
@@ -477,7 +517,7 @@ export async function fetchAgentHistory(provider, address, chainId = BASE_MAINNE
             });
           }
 
-          if (status === 4) {
+          if (status === ESCROW_STATUS.Refunded) {
             rows.push({
               escrowId,
               hash: null,
@@ -549,6 +589,29 @@ export async function fetchAgentHistory(provider, address, chainId = BASE_MAINNE
   }
 }
 
+async function resolveEscrowId(escrowContract, receipt) {
+  const createdEvent = receipt.logs
+    .map((log) => {
+      try {
+        return escrowContract.interface.parseLog(log);
+      } catch {
+        return null;
+      }
+    })
+    .find((parsed) => parsed?.name === 'EscrowCreated');
+
+  let escrowId = createdEvent?.args?.escrowId ?? createdEvent?.args?.[0] ?? null;
+
+  if (escrowId == null) {
+    const nextEscrowId = await escrowContract.nextEscrowId();
+    if (nextEscrowId > 0n) {
+      escrowId = nextEscrowId - 1n;
+    }
+  }
+
+  return escrowId;
+}
+
 export function parseWalletError(error) {
   return (
     error?.shortMessage ||
@@ -579,11 +642,23 @@ function formatEscrowStepError(stepLabel, escrowContract, error) {
   }
 
   if (parsedError?.name === 'NotBuyer') {
+    if (stepLabel === 'Cancel escrow') {
+      return `${stepLabel} failed: only the escrow buyer wallet can cancel this escrow.`;
+    }
+
     return `${stepLabel} failed: only the escrow buyer wallet can fund this escrow.`;
+  }
+
+  if (parsedError?.name === 'NotAgent') {
+    return `${stepLabel} failed: only the named agent wallet can accept or submit this escrow.`;
   }
 
   if (parsedError?.name === 'EscrowNotFound') {
     return `${stepLabel} failed: the escrow could not be found on-chain.`;
+  }
+
+  if (parsedError?.name === 'NotCreatedOrAccepted') {
+    return `${stepLabel} failed: only escrows awaiting acceptance or funding can be cancelled.`;
   }
 
   if (parsedError?.name === 'InvalidStatus') {

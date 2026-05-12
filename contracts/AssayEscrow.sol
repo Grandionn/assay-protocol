@@ -78,6 +78,7 @@ contract AssayEscrow is IAssayEscrow, Ownable, ReentrancyGuard {
         uint256 deadline,
         bytes32 specHash
     );
+    event EscrowAccepted(uint256 indexed escrowId, address indexed agent);
     event EscrowFunded(uint256 indexed escrowId, uint256 amount);
     event DeliverableSubmitted(uint256 indexed escrowId, bytes32 deliverableHash);
     event EscrowSettled(
@@ -92,6 +93,7 @@ contract AssayEscrow is IAssayEscrow, Ownable, ReentrancyGuard {
         uint256 refundAmount,
         uint256 slashAmount
     );
+    event EscrowCancelled(uint256 indexed escrowId);
     event VerifierAuthorized(address indexed verifier);
     event VerifierRevoked(address indexed verifier);
     event TreasuryUpdated(address oldTreasury, address newTreasury);
@@ -114,6 +116,7 @@ contract AssayEscrow is IAssayEscrow, Ownable, ReentrancyGuard {
     error ZeroAddress();
     error AgentNotActive();
     error SelfDeal();
+    error NotCreatedOrAccepted();
     error NotExpirable(EscrowStatus current);
 
     // ────────────────────────────────────────────────────────────────────────────
@@ -175,14 +178,28 @@ contract AssayEscrow is IAssayEscrow, Ownable, ReentrancyGuard {
         emit EscrowCreated(escrowId, msg.sender, agent, amount, deadline, specHash);
     }
 
+    /// @notice Accept an existing escrow so the buyer can lock funds
+    function acceptEscrow(uint256 escrowId) external {
+        Escrow storage escrow = _getEscrow(escrowId);
+
+        if (msg.sender != escrow.agent) revert NotAgent();
+        if (escrow.status != EscrowStatus.Created) {
+            revert InvalidStatus(escrow.status, EscrowStatus.Created);
+        }
+
+        escrow.status = EscrowStatus.Accepted;
+
+        emit EscrowAccepted(escrowId, msg.sender);
+    }
+
     /// @notice Fund an existing escrow (transfers USDC from buyer to this contract)
     /// @dev Buyer must have approved this contract for at least `escrow.amount` USDC
     function fundEscrow(uint256 escrowId) external nonReentrant {
         Escrow storage escrow = _getEscrow(escrowId);
 
         if (msg.sender != escrow.buyer)           revert NotBuyer();
-        if (escrow.status != EscrowStatus.Created) {
-            revert InvalidStatus(escrow.status, EscrowStatus.Created);
+        if (escrow.status != EscrowStatus.Accepted) {
+            revert InvalidStatus(escrow.status, EscrowStatus.Accepted);
         }
         if (block.timestamp >= escrow.deadline)   revert DeadlineInPast();
         if (!stakeRegistry.isActive(escrow.agent)) revert AgentNotActive();
@@ -193,6 +210,20 @@ contract AssayEscrow is IAssayEscrow, Ownable, ReentrancyGuard {
         usdc.safeTransferFrom(msg.sender, address(this), escrow.amount);
 
         emit EscrowFunded(escrowId, escrow.amount);
+    }
+
+    /// @notice Cancel an escrow before funds are locked
+    function cancelEscrow(uint256 escrowId) external {
+        Escrow storage escrow = _getEscrow(escrowId);
+
+        if (msg.sender != escrow.buyer) revert NotBuyer();
+        if (escrow.status != EscrowStatus.Created && escrow.status != EscrowStatus.Accepted) {
+            revert NotCreatedOrAccepted();
+        }
+
+        escrow.status = EscrowStatus.Cancelled;
+
+        emit EscrowCancelled(escrowId);
     }
 
     /// @notice Agent submits the deliverable hash (content-addressed reference to output)

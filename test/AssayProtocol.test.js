@@ -13,7 +13,15 @@ const MIN_STAKE  = USDC(100);
 const THIRTY_DAYS = 30 * 24 * 60 * 60;
 
 // ─── EscrowStatus enum values (mirrors IAssayEscrow.sol) ────────────────────
-const Status = { Created: 0n, Funded: 1n, Submitted: 2n, Settled: 3n, Refunded: 4n };
+const Status = {
+  Created: 0n,
+  Accepted: 1n,
+  Funded: 2n,
+  Submitted: 3n,
+  Settled: 4n,
+  Refunded: 5n,
+  Cancelled: 6n,
+};
 
 // ─────────────────────────────────────────────────────────────────────────────
 describe("Assay Protocol", function () {
@@ -278,6 +286,7 @@ describe("Assay Protocol", function () {
         const spec     = ethers.keccak256(ethers.toUtf8Bytes("spec"));
         const escrowId = await escrow.nextEscrowId();
         await escrow.connect(buyer).createEscrow(agent.address, amount, deadline, spec);
+        await escrow.connect(agent).acceptEscrow(escrowId);
         await escrow.connect(buyer).fundEscrow(escrowId);
         await escrow.connect(agent).submitDeliverable(
           escrowId, ethers.keccak256(ethers.toUtf8Bytes("del"))
@@ -296,6 +305,7 @@ describe("Assay Protocol", function () {
           agent.address, amount, deadline,
           ethers.keccak256(ethers.toUtf8Bytes("spec"))
         );
+        await escrow.connect(agent).acceptEscrow(escrowId);
         await escrow.connect(buyer).fundEscrow(escrowId);
         await escrow.connect(agent).submitDeliverable(
           escrowId, ethers.keccak256(ethers.toUtf8Bytes("del"))
@@ -352,6 +362,7 @@ describe("Assay Protocol", function () {
           agent.address, amount, deadline,
           ethers.keccak256(ethers.toUtf8Bytes("spec"))
         );
+        await escrow.connect(agent).acceptEscrow(0n);
         await escrow.connect(buyer).fundEscrow(0n);
         await escrow.connect(agent).submitDeliverable(0n, ethers.ZeroHash);
 
@@ -469,6 +480,7 @@ describe("Assay Protocol", function () {
           agent.address, USDC(50), deadline,
           ethers.keccak256(ethers.toUtf8Bytes("spec"))
         );
+        await escrow.connect(agent).acceptEscrow(escrowId);
       });
 
       it("locks USDC in contract and emits EscrowFunded", async function () {
@@ -526,6 +538,7 @@ describe("Assay Protocol", function () {
           agent.address, USDC(50), deadline,
           ethers.keccak256(ethers.toUtf8Bytes("spec"))
         );
+        await escrow.connect(agent).acceptEscrow(escrowId);
         await escrow.connect(buyer).fundEscrow(escrowId);
       });
 
@@ -565,6 +578,7 @@ describe("Assay Protocol", function () {
           agent.address, USDC(50), deadline,
           ethers.keccak256(ethers.toUtf8Bytes("spec"))
         );
+        await escrow.connect(agent).acceptEscrow(escrowId);
         await escrow.connect(buyer).fundEscrow(escrowId);
         await escrow.connect(agent).submitDeliverable(
           escrowId, ethers.keccak256(ethers.toUtf8Bytes("deliverable"))
@@ -649,6 +663,7 @@ describe("Assay Protocol", function () {
           (await time.latest()) + THIRTY_DAYS,
           ethers.ZeroHash
         );
+        await escrow.connect(agent).acceptEscrow(id2);
         await escrow.connect(buyer).fundEscrow(id2);
         await expect(
           escrow.connect(verifier).verifyAndSettle(id2, true, 80)
@@ -670,6 +685,7 @@ describe("Assay Protocol", function () {
       });
 
       it("expires a Funded escrow after deadline; buyer gets refund; status=Refunded", async function () {
+        await escrow.connect(agent).acceptEscrow(escrowId);
         await escrow.connect(buyer).fundEscrow(escrowId);
         await time.increase(THIRTY_DAYS + 1);
 
@@ -681,6 +697,7 @@ describe("Assay Protocol", function () {
       });
 
       it("expires a Submitted escrow after deadline", async function () {
+        await escrow.connect(agent).acceptEscrow(escrowId);
         await escrow.connect(buyer).fundEscrow(escrowId);
         await escrow.connect(agent).submitDeliverable(escrowId, ethers.ZeroHash);
         await time.increase(THIRTY_DAYS + 1);
@@ -689,6 +706,7 @@ describe("Assay Protocol", function () {
       });
 
       it("reverts DeadlineNotReached when called before the deadline", async function () {
+        await escrow.connect(agent).acceptEscrow(escrowId);
         await escrow.connect(buyer).fundEscrow(escrowId);
         await expect(
           escrow.connect(stranger).expireEscrow(escrowId)
@@ -704,6 +722,7 @@ describe("Assay Protocol", function () {
       });
 
       it("(L-3) reverts NotExpirable(Settled=3) after a successful settlement", async function () {
+        await escrow.connect(agent).acceptEscrow(escrowId);
         await escrow.connect(buyer).fundEscrow(escrowId);
         await escrow.connect(agent).submitDeliverable(escrowId, ethers.ZeroHash);
         await escrow.connect(verifier).verifyAndSettle(escrowId, true, 80);
@@ -714,6 +733,7 @@ describe("Assay Protocol", function () {
       });
 
       it("(L-3) reverts NotExpirable(Refunded=4) for an already-refunded escrow", async function () {
+        await escrow.connect(agent).acceptEscrow(escrowId);
         await escrow.connect(buyer).fundEscrow(escrowId);
         await escrow.connect(agent).submitDeliverable(escrowId, ethers.ZeroHash);
         await escrow.connect(verifier).verifyAndSettle(escrowId, false, 0);
@@ -735,6 +755,7 @@ describe("Assay Protocol", function () {
           agent.address, USDC(50), deadline,
           ethers.keccak256(ethers.toUtf8Bytes("spec"))
         );
+        await escrow.connect(agent).acceptEscrow(escrowId);
         await escrow.connect(buyer).fundEscrow(escrowId);
         await escrow.connect(agent).submitDeliverable(
           escrowId, ethers.keccak256(ethers.toUtf8Bytes("deliverable"))
@@ -1009,26 +1030,30 @@ describe("Assay Protocol", function () {
       );
       expect((await escrow.getEscrow(escrowId)).status).to.equal(Status.Created);
 
-      // 3. Fund
+      // 3. Accept
+      await escrow.connect(agent).acceptEscrow(escrowId);
+      expect((await escrow.getEscrow(escrowId)).status).to.equal(Status.Accepted);
+
+      // 4. Fund
       await escrow.connect(buyer).fundEscrow(escrowId);
       expect((await escrow.getEscrow(escrowId)).status).to.equal(Status.Funded);
 
-      // 4. Submit
+      // 5. Submit
       await escrow.connect(agent).submitDeliverable(
         escrowId, ethers.keccak256(ethers.toUtf8Bytes("result"))
       );
       expect((await escrow.getEscrow(escrowId)).status).to.equal(Status.Submitted);
 
-      // 5. Settle
+      // 6. Settle
       await escrow.connect(verifier).verifyAndSettle(escrowId, true, 95);
       expect((await escrow.getEscrow(escrowId)).status).to.equal(Status.Settled);
 
-      // 6. Verify earnings in registry
+      // 7. Verify earnings in registry
       const fee         = (amount * 250n) / 10_000n;
       const agentPayment = amount - fee;
       expect(await stakeRegistry.getEarnings(agent.address)).to.equal(agentPayment);
 
-      // 7. Verify reputation stats updated (1 job, score still 0 — below MIN_JOBS threshold)
+      // 8. Verify reputation stats updated (1 job, score still 0 — below MIN_JOBS threshold)
       const stats = await reputation.getAgentStats(agent.address);
       expect(stats.totalJobs).to.equal(1n);
       expect(stats.completedJobs).to.equal(1n);
@@ -1045,6 +1070,7 @@ describe("Assay Protocol", function () {
         (await time.latest()) + THIRTY_DAYS,
         ethers.ZeroHash
       );
+      await escrow.connect(agent).acceptEscrow(escrowId);
       await escrow.connect(buyer).fundEscrow(escrowId);
 
       const stakeBefore = await stakeRegistry.getStake(agent.address);
@@ -1071,6 +1097,7 @@ describe("Assay Protocol", function () {
         (await time.latest()) + THIRTY_DAYS,
         ethers.ZeroHash
       );
+      await escrow.connect(agent).acceptEscrow(escrowId);
 
       // H-1 fix: isActive is computed dynamically — no stored flag to update
       await stakeRegistry.connect(owner).setMinimumStake(MIN_STAKE * 10n);
@@ -1105,6 +1132,7 @@ describe("Assay Protocol", function () {
         (await time.latest()) + THIRTY_DAYS,
         ethers.ZeroHash
       );
+      await escrow.connect(agent).acceptEscrow(escrowId);
 
       // Agent deactivates self by withdrawing entire stake to 0
       await stakeRegistry.connect(agent).withdrawStake(MIN_STAKE);
@@ -1155,6 +1183,7 @@ describe("Assay Protocol", function () {
         (await time.latest()) + THIRTY_DAYS,
         ethers.ZeroHash
       );
+      await escrow.connect(agent).acceptEscrow(escrowId);
       await escrow.connect(buyer).fundEscrow(escrowId);
       await escrow.connect(agent).submitDeliverable(escrowId, ethers.ZeroHash);
 
@@ -1184,6 +1213,7 @@ describe("Assay Protocol", function () {
           (await time.latest()) + THIRTY_DAYS,
           ethers.keccak256(ethers.toUtf8Bytes(`spec-${i}`))
         );
+        await escrow.connect(agent).acceptEscrow(escrowId);
         await escrow.connect(buyer).fundEscrow(escrowId);
         await escrow.connect(agent).submitDeliverable(
           escrowId, ethers.keccak256(ethers.toUtf8Bytes(`output-${i}`))

@@ -1,8 +1,7 @@
 # Assay Protocol - Deployed Addresses (Base Mainnet)
 
 **Network:** base
-**Chain ID:** 8453
-**Deployed at:** 2026-05-11T09:19:21.5612291Z
+**Deployed at:** 2026-05-12T10:38:00.783Z
 **Deployer:** `0x328F5a2169D803211dC24aC6576FbE2545a9b51e`
 **Treasury:** `0x328F5a2169D803211dC24aC6576FbE2545a9b51e`
 **USDC:** `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913`
@@ -15,7 +14,8 @@
 | USDC | `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` |
 | AssayStakeRegistry | `0x2589D201414A4658eFED96ea34841fBE31416bb8` |
 | AssayReputation | `0x713F6aa4D833A1943fE55032ABc647c72501949E` |
-| AssayEscrow | `0xC0Ce47838aCF7Dfb77ae3a6161B552604Ae8aaEe` |
+| AssayEscrow | `0x797b3e1C41fcA5ee5CB56bA7E2454e4545C6D70F` |
+| AssayEscrow (deprecated) | `0xC0Ce47838aCF7Dfb77ae3a6161B552604Ae8aaEe` |
 
 ## Wiring
 
@@ -23,30 +23,11 @@
 |---|---|
 | StakeRegistry.isAuthorizedEscrow(AssayEscrow) | true |
 | Reputation.isAuthorizedCaller(AssayEscrow) | true |
-
-## Basescan Verification
-
-| Contract | Link |
-|---|---|
-| AssayStakeRegistry | [basescan.org/address/0x2589D201414A4658eFED96ea34841fBE31416bb8#code](https://basescan.org/address/0x2589D201414A4658eFED96ea34841fBE31416bb8#code) |
-| AssayReputation | [basescan.org/address/0x713F6aa4D833A1943fE55032ABc647c72501949E#code](https://basescan.org/address/0x713F6aa4D833A1943fE55032ABc647c72501949E#code) |
-| AssayEscrow | [basescan.org/address/0xC0Ce47838aCF7Dfb77ae3a6161B552604Ae8aaEe#code](https://basescan.org/address/0xC0Ce47838aCF7Dfb77ae3a6161B552604Ae8aaEe#code) |
+| AssayEscrow.isAuthorizedVerifier(deployer) | true |
+| StakeRegistry.isAuthorizedEscrow(deprecated) | false |
+| Reputation.isAuthorizedCaller(deprecated) | false |
 
 ## Constructor Arguments Used for Verification
-
-### AssayStakeRegistry
-
-```text
-0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913
-10000000
-0x328F5a2169D803211dC24aC6576FbE2545a9b51e
-```
-
-### AssayReputation
-
-```text
-0x2589D201414A4658eFED96ea34841fBE31416bb8
-```
 
 ### AssayEscrow
 
@@ -59,6 +40,5 @@
 
 ## Notes
 
-- No MockUSDC was deployed on mainnet.
-- The deployment mirrors testnet wiring and uses canonical Base mainnet USDC.
-- Treasury is currently set to the deployer address. Update it with `setTreasury()` if needed.
+- Treasury is currently set to the deployer address. Update it with setTreasury() if needed.
+- Mainnet uses canonical Base USDC; no MockUSDC is deployed.

@@ -11,7 +11,7 @@ import { getNetworkConfig } from '../config/contracts';
 import { useWallet } from '../contexts/WalletContext';
 import { fetchIndexedAgent } from '../lib/api';
 import { hydrateAgent } from '../lib/agent';
-import { createAndFundEscrow, fetchOnChainAgent, parseWalletError } from '../lib/contracts';
+import { createEscrowRequest, fetchOnChainAgent, parseWalletError } from '../lib/contracts';
 import { formatDateTime, formatUsdc, formatUsdcCompact, truncateAddress } from '../lib/format';
 
 export function CreateEscrowPage() {
@@ -136,7 +136,7 @@ export function CreateEscrowPage() {
       setIsSubmitting(true);
       setCreatedEscrowId('');
 
-      const result = await createAndFundEscrow({
+      const result = await createEscrowRequest({
         signer,
         agentAddress,
         paymentAmount: form.paymentAmount,
@@ -148,7 +148,7 @@ export function CreateEscrowPage() {
 
       const resolvedEscrowId = result.escrowId.toString();
       setCreatedEscrowId(resolvedEscrowId);
-      setStatus({ tone: 'success', message: `Escrow ${resolvedEscrowId} created and funded successfully.` });
+      setStatus({ tone: 'success', message: `Escrow ${resolvedEscrowId} created successfully. It is now awaiting agent acceptance.` });
     } catch (submitError) {
       setStatus({ tone: 'error', message: parseWalletError(submitError) });
     } finally {
@@ -181,8 +181,8 @@ export function CreateEscrowPage() {
     <div className="space-y-8">
       <SectionHeader
         eyebrow="Escrow Creation"
-        title={`Create funded escrow for ${agent.name}`}
-        description={`Lock ${activeNetwork.tokenLabel} on ${activeNetwork.chainName} against a hashed service specification, then move the engagement into the verifiable delivery workflow.`}
+        title={`Create escrow request for ${agent.name}`}
+        description={`Create an escrow request on ${activeNetwork.chainName} against a hashed service specification, then fund it once the agent explicitly accepts the engagement.`}
       />
 
       {walletError ? <Banner tone="warning" message={walletError} /> : null}
@@ -201,7 +201,7 @@ export function CreateEscrowPage() {
               <div className="text-xs font-semibold uppercase tracking-[0.32em] text-primary">Wallet Required</div>
               <h2 className="mt-2 font-display text-3xl font-bold tracking-[-0.06em] text-text">Connect MetaMask to create escrow.</h2>
               <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-300/76">
-                {`The buyer wallet signs the approval, escrow creation, and funding transactions on ${activeNetwork.chainName}.`}
+                {`The buyer wallet signs the escrow creation transaction first, then funds the escrow on ${activeNetwork.chainName} after the agent accepts.`}
               </p>
             </div>
             <button
@@ -221,7 +221,7 @@ export function CreateEscrowPage() {
         <form onSubmit={handleSubmit} className="panel rounded-[32px] p-6 md:p-8">
           <div className="mb-8 flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.34em] text-primary">
             <span className="h-2 w-2 rounded-full bg-primary" />
-            Buyer Funding Parameters
+            Escrow Parameters
           </div>
 
           <div className="space-y-8">
@@ -284,7 +284,7 @@ export function CreateEscrowPage() {
             </div>
 
             <div className="rounded-3xl border border-primary/12 bg-primary/8 p-5 text-sm leading-7 text-slate-300/76">
-              {`Escrow creation performs the full on-chain flow: approve ${activeNetwork.tokenLabel} to the escrow contract, create the escrow agreement, then fund it in a second transaction step.`}
+              {`Escrow creation now opens the request only. After the agent accepts, the buyer can approve ${activeNetwork.tokenLabel} and fund the escrow from the detail view.`}
             </div>
 
             <button
@@ -293,7 +293,7 @@ export function CreateEscrowPage() {
               className="electric-button inline-flex w-full items-center justify-center gap-3 rounded-2xl px-5 py-4 text-sm font-semibold uppercase tracking-[0.28em] transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-70"
             >
               {isSubmitting ? <LoaderCircle size={18} className="animate-spin" /> : <ShieldCheck size={18} />}
-              {isSubmitting ? 'Creating Escrow' : 'Create & Fund Escrow'}
+              {isSubmitting ? 'Creating Escrow' : 'Create Escrow Request'}
             </button>
           </div>
         </form>
@@ -350,7 +350,7 @@ export function CreateEscrowPage() {
             <article className="rounded-[28px] border border-success/25 bg-success/10 p-5 text-success">
               <div className="text-xs font-semibold uppercase tracking-[0.32em]">Escrow Ready</div>
               <p className="mt-3 text-sm leading-7">
-                Escrow <span className="font-mono">#{createdEscrowId}</span> has been funded and is now waiting for agent delivery.
+                Escrow <span className="font-mono">#{createdEscrowId}</span> has been created and is now waiting for agent acceptance.
               </p>
               <Link
                 to={`/escrow/${createdEscrowId}`}
