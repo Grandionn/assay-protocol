@@ -8,6 +8,11 @@ const agentSchema = new mongoose.Schema(
     stake: { type: Number, required: true },
     assayScore: { type: Number, required: true, default: 0 },
     embedding: { type: [Number], required: true },
+    erc8004AgentId: { type: Number, default: null },
+    erc8004Name: { type: String, default: null },
+    erc8004Description: { type: String, default: null },
+    erc8004Image: { type: String, default: null },
+    erc8004Owner: { type: String, default: null },
     registeredAt: { type: String, default: () => new Date().toISOString() },
   },
   {

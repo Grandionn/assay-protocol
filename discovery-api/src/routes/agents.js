@@ -12,7 +12,7 @@ function validationError(message) {
 }
 
 function validateRegisterPayload(payload) {
-  const { address, capability, stake, assayScore, name } = payload ?? {};
+  const { address, capability, stake, assayScore, name, erc8004AgentId } = payload ?? {};
 
   if (!address || typeof address !== 'string' || address.trim().length === 0) {
     throw validationError('address is required and must be a non-empty string');
@@ -34,6 +34,12 @@ function validateRegisterPayload(payload) {
   if (trimmedName && trimmedName.length > 64) {
     throw validationError('name must be 64 characters or fewer');
   }
+  if (erc8004AgentId != null) {
+    const parsedId = Number(erc8004AgentId);
+    if (!Number.isInteger(parsedId) || parsedId < 0) {
+      throw validationError('erc8004AgentId must be a non-negative integer when provided');
+    }
+  }
 
   return {
     address: address.trim().toLowerCase(),
@@ -41,6 +47,7 @@ function validateRegisterPayload(payload) {
     stake,
     assayScore,
     ...(trimmedName ? { name: trimmedName } : {}),
+    ...(erc8004AgentId != null ? { erc8004AgentId: Number(erc8004AgentId) } : {}),
   };
 }
 
@@ -54,7 +61,8 @@ function isScoreOnlyUpdatePayload(payload) {
     Object.prototype.hasOwnProperty.call(payload, 'assayScore') &&
     !Object.prototype.hasOwnProperty.call(payload, 'name') &&
     !Object.prototype.hasOwnProperty.call(payload, 'capability') &&
-    !Object.prototype.hasOwnProperty.call(payload, 'stake')
+    !Object.prototype.hasOwnProperty.call(payload, 'stake') &&
+    !Object.prototype.hasOwnProperty.call(payload, 'erc8004AgentId')
   );
 }
 
@@ -65,6 +73,7 @@ function buildScoreOnlyUpdatePayload(payload, existingEntry) {
     capability: existingEntry?.metadata?.capability,
     stake: existingEntry?.metadata?.stake,
     assayScore: payload.assayScore,
+    erc8004AgentId: existingEntry?.metadata?.erc8004AgentId ?? null,
   });
 }
 
@@ -74,9 +83,28 @@ async function registerAgentRecord(payload, options = {}) {
     ? `${normalised.name} ${normalised.capability}`
     : normalised.capability;
   const embedding = await getEmbedding(embeddingText);
+  let erc8004Data = {};
+  if (normalised.erc8004AgentId != null) {
+    const { fetchErc8004AgentCard } = require('../erc8004');
+    const card = await fetchErc8004AgentCard(normalised.erc8004AgentId);
+    if (card) {
+      erc8004Data = {
+        erc8004AgentId: card.agentId,
+        erc8004Name: card.name,
+        erc8004Description: card.description,
+        erc8004Image: card.image,
+        erc8004Owner: card.owner,
+      };
+    } else {
+      erc8004Data = {
+        erc8004AgentId: normalised.erc8004AgentId,
+      };
+    }
+  }
 
   const metadata = {
     ...normalised,
+    ...erc8004Data,
     registeredAt: options.registeredAt ?? new Date().toISOString(),
   };
 

@@ -364,6 +364,50 @@ export function AgentProfilePage() {
         <SummaryCard icon={Coins} label="Stake Weight" value={formatUsdc(agent.stake)} helper="Protocol collateral depth" />
       </section>
 
+      {agent.erc8004AgentId != null ? (
+        <section className="panel rounded-[32px] p-6 md:p-8">
+          <div className="mb-6 flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-400">
+              <ShieldCheck size={20} />
+            </div>
+            <div>
+              <div className="text-xs font-semibold uppercase tracking-[0.32em] text-emerald-400">
+                ERC-8004 Linked Identity
+              </div>
+              <div className="mt-1 text-sm text-slate-300/72">
+                Agent ID #{agent.erc8004AgentId} on the ERC-8004 Identity Registry
+              </div>
+            </div>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-3">
+            {agent.erc8004Name ? (
+              <div className="rounded-2xl border border-white/6 bg-white/4 p-4">
+                <div className="text-[10px] font-semibold uppercase tracking-[0.28em] text-muted">8004 Name</div>
+                <div className="mt-2 text-lg font-semibold text-text">{agent.erc8004Name}</div>
+              </div>
+            ) : null}
+            {agent.erc8004Owner ? (
+              <div className="rounded-2xl border border-white/6 bg-white/4 p-4">
+                <div className="text-[10px] font-semibold uppercase tracking-[0.28em] text-muted">8004 Owner</div>
+                <div className="mt-2 font-mono text-sm text-primary">{truncateAddress(agent.erc8004Owner, 8, 6)}</div>
+              </div>
+            ) : null}
+            <div className="rounded-2xl border border-white/6 bg-white/4 p-4">
+              <div className="text-[10px] font-semibold uppercase tracking-[0.28em] text-muted">Registry</div>
+              <a
+                href={`https://basescan.org/token/0x8004A169FB4a3325136EB29fA0ceB6D2e539a432?a=${agent.erc8004AgentId}`}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-2 inline-flex items-center gap-2 text-sm font-semibold text-primary transition hover:text-sky-200"
+              >
+                View on BaseScan
+                <ExternalLink size={14} />
+              </a>
+            </div>
+          </div>
+        </section>
+      ) : null}
+
       <section className="panel overflow-hidden rounded-[32px]">
         <div className="flex flex-col gap-3 border-b border-white/6 bg-white/3 px-6 py-5 md:flex-row md:items-center md:justify-between">
           <div>

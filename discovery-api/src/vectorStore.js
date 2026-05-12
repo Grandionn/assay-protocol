@@ -149,6 +149,9 @@ function search(queryEmbedding, topK = 20, queryText = '') {
       stake: metadata.stake,
       registeredAt: metadata.registeredAt,
       name: metadata.name,
+      erc8004AgentId: metadata.erc8004AgentId ?? null,
+      erc8004Name: metadata.erc8004Name ?? null,
+      erc8004Image: metadata.erc8004Image ?? null,
       similarity: _round4(sim),
       combinedScore: _round4(combined),
       scoreBreakdown: {

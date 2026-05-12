@@ -34,6 +34,7 @@ export function RegisterPage() {
     address: '',
     name: '',
     capability: '',
+    erc8004AgentId: '',
     stakeAmount: '10',
   });
   const [status, setStatus] = useState({ tone: '', message: '' });
@@ -66,7 +67,7 @@ export function RegisterPage() {
     }, delayMs);
   }
 
-  async function attemptDiscoveryIndex({ address, name, capability, stakeMicro, signer }) {
+  async function attemptDiscoveryIndex({ address, name, capability, stakeMicro, signer, erc8004AgentId }) {
     let signature;
 
     try {
@@ -82,6 +83,7 @@ export function RegisterPage() {
       capability,
       stake: Number(stakeMicro),
       assayScore: INITIAL_ASSAY_SCORE,
+      ...(erc8004AgentId ? { erc8004AgentId: Number(erc8004AgentId) } : {}),
       signature,
     });
   }
@@ -144,6 +146,7 @@ export function RegisterPage() {
           capability: trimmedCapability,
           stakeMicro: result.stakeAmountMicro,
           signer,
+          erc8004AgentId: form.erc8004AgentId.trim() || null,
         });
         setStatus({ tone: 'success', message: 'Agent registered and indexed successfully. Redirecting to the profile view.' });
       } catch (indexError) {
@@ -176,6 +179,7 @@ export function RegisterPage() {
           capability: trimmedCapability,
           stakeMicro: stakeAmountMicro,
           signer,
+          erc8004AgentId: form.erc8004AgentId.trim() || null,
         });
         setStatus({ tone: 'success', message: 'Profile indexed successfully. Redirecting to the profile view.' });
       } catch (indexError) {
@@ -258,6 +262,33 @@ export function RegisterPage() {
                 placeholder="Describe the autonomous logic, decision-making framework, and utility this agent brings to the protocol..."
                 className="min-h-[180px] w-full rounded-3xl border border-white/8 bg-background/70 px-4 py-4 outline-none transition placeholder:text-muted/55 focus:border-primary/35"
               />
+            </div>
+
+            <div>
+              <label className="mb-3 block text-xs font-semibold uppercase tracking-[0.3em] text-muted">
+                ERC-8004 Agent ID <span className="normal-case tracking-normal text-slate-300/50">(optional)</span>
+              </label>
+              <div className="rounded-2xl border border-white/8 bg-background/70 px-4 py-4">
+                <div className="flex items-center gap-3">
+                  <ShieldCheck size={18} className="text-primary" />
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={form.erc8004AgentId}
+                    onChange={(event) => setForm((current) => ({ ...current, erc8004AgentId: event.target.value }))}
+                    placeholder="e.g. 42"
+                    className="w-full bg-transparent outline-none placeholder:text-muted/55"
+                  />
+                </div>
+              </div>
+              <p className="mt-2 text-sm text-slate-300/68">
+                If your agent has an ERC-8004 identity on Base, enter its token ID to link profiles.
+                Find yours at{' '}
+                <a href="https://8004.org" target="_blank" rel="noreferrer" className="text-primary hover:underline">
+                  8004.org
+                </a>
+              </p>
             </div>
 
             <div>

@@ -92,6 +92,11 @@ export function hydrateAgent(rawAgent, onChainAgent = {}, onChainStats = null) {
   const tags = rawAgent?.tags ?? extractCapabilityTags(capability);
   const active = onChainAgent?.active ?? rawAgent?.active ?? false;
   const registered = onChainAgent?.registered ?? Boolean(rawAgent?.registeredAt);
+  const erc8004AgentId = rawAgent?.erc8004AgentId ?? null;
+  const erc8004Name = rawAgent?.erc8004Name ?? null;
+  const erc8004Image = rawAgent?.erc8004Image ?? null;
+  const erc8004Owner = rawAgent?.erc8004Owner ?? null;
+  const erc8004Description = rawAgent?.erc8004Description ?? null;
   let completionRate = rawAgent?.completionRate ?? null;
   let avgSpeedMs = rawAgent?.avgSpeedMs ?? null;
   let reliabilityStreak = rawAgent?.reliabilityStreak ?? 0;
@@ -115,6 +120,11 @@ export function hydrateAgent(rawAgent, onChainAgent = {}, onChainStats = null) {
     tags,
     active,
     registered,
+    erc8004AgentId,
+    erc8004Name,
+    erc8004Image,
+    erc8004Owner,
+    erc8004Description,
     status: rawAgent?.status ?? deriveStatus({ stake, active, registered }),
     completionRate,
     avgSpeedMs,

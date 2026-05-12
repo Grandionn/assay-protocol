@@ -1,4 +1,4 @@
-import { ArrowUpRight, BadgeCheck, Bolt, Coins, Gauge, Shield } from 'lucide-react';
+import { ArrowUpRight, BadgeCheck, Bolt, Coins, Gauge, Shield, ShieldCheck } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { formatPercent, formatUsdcCompact } from '../lib/format';
 import { StatusBadge } from './StatusBadge';
@@ -49,6 +49,17 @@ export function AgentCard({ agent }) {
           <div className="rounded-full border border-primary/15 bg-primary/8 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.28em] text-primary">
             Match {Math.round(agent.combinedScore * 100)}%
           </div>
+          {agent.erc8004AgentId != null ? (
+            <a
+              href={`https://basescan.org/token/0x8004A169FB4a3325136EB29fA0ceB6D2e539a432?a=${agent.erc8004AgentId}`}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.28em] text-emerald-400/90 transition hover:bg-emerald-500/20"
+            >
+              <ShieldCheck size={12} />
+              ERC-8004
+            </a>
+          ) : null}
         </div>
       </div>
 
