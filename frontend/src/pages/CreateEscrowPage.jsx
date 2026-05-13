@@ -39,6 +39,7 @@ export function CreateEscrowPage() {
     paymentAmount: '100',
     specText: '',
     deadline: buildDefaultDeadlineInput(),
+    erc8004AgentId: '',
   });
   const activeNetwork = getNetworkConfig(readChainId);
 
@@ -132,6 +133,12 @@ export function CreateEscrowPage() {
       return;
     }
 
+    const normalizedErc8004AgentId = form.erc8004AgentId.trim();
+    if (normalizedErc8004AgentId && !/^\d+$/.test(normalizedErc8004AgentId)) {
+      setStatus({ tone: 'error', message: 'ERC-8004 Agent ID must be a non-negative integer when provided.' });
+      return;
+    }
+
     try {
       setIsSubmitting(true);
       setCreatedEscrowId('');
@@ -142,6 +149,7 @@ export function CreateEscrowPage() {
         paymentAmount: form.paymentAmount,
         specHash: ethers.keccak256(ethers.toUtf8Bytes(form.specText.trim())),
         deadlineTimestamp,
+        erc8004AgentId: normalizedErc8004AgentId || null,
         chainId: readChainId,
         onStatus: (message) => setStatus({ tone: 'info', message }),
       });
@@ -281,6 +289,29 @@ export function CreateEscrowPage() {
                 </div>
               </div>
               <p className="mt-2 text-sm text-slate-300/68">Selected settlement deadline: {formatDateTime(Math.floor(new Date(form.deadline).getTime() / 1000))}</p>
+            </div>
+
+            <div>
+              <label className="mb-3 block text-xs font-semibold uppercase tracking-[0.3em] text-muted">
+                ERC-8004 Agent ID <span className="normal-case tracking-normal text-emerald-300/50">(optional)</span>
+              </label>
+              <div className="rounded-2xl border border-white/8 bg-background/70 px-4 py-4">
+                <div className="flex items-center gap-3">
+                  <ShieldCheck size={18} className="text-primary" />
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={form.erc8004AgentId}
+                    onChange={(event) => setForm((current) => ({ ...current, erc8004AgentId: event.target.value }))}
+                    placeholder="e.g. 42"
+                    className="w-full bg-transparent outline-none placeholder:text-muted/55"
+                  />
+                </div>
+              </div>
+              <p className="mt-2 text-sm text-emerald-300/72">
+                If the agent uses an ERC-8004 identity, include its token ID so settlement can publish the updated Assay Score to the shared reputation registry.
+              </p>
             </div>
 
             <div className="rounded-3xl border border-primary/12 bg-primary/8 p-5 text-sm leading-7 text-slate-300/76">

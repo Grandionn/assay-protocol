@@ -285,7 +285,7 @@ describe("Assay Protocol", function () {
         const deadline = (await time.latest()) + THIRTY_DAYS;
         const spec     = ethers.keccak256(ethers.toUtf8Bytes("spec"));
         const escrowId = await escrow.nextEscrowId();
-        await escrow.connect(buyer).createEscrow(agent.address, amount, deadline, spec);
+        await escrow.connect(buyer).createEscrow(agent.address, amount, deadline, spec, 0);
         await escrow.connect(agent).acceptEscrow(escrowId);
         await escrow.connect(buyer).fundEscrow(escrowId);
         await escrow.connect(agent).submitDeliverable(
@@ -303,7 +303,8 @@ describe("Assay Protocol", function () {
         const escrowId = await escrow.nextEscrowId();
         await escrow.connect(buyer).createEscrow(
           agent.address, amount, deadline,
-          ethers.keccak256(ethers.toUtf8Bytes("spec"))
+          ethers.keccak256(ethers.toUtf8Bytes("spec")),
+          0
         );
         await escrow.connect(agent).acceptEscrow(escrowId);
         await escrow.connect(buyer).fundEscrow(escrowId);
@@ -360,7 +361,8 @@ describe("Assay Protocol", function () {
         const deadline = (await time.latest()) + THIRTY_DAYS;
         await escrow.connect(buyer).createEscrow(
           agent.address, amount, deadline,
-          ethers.keccak256(ethers.toUtf8Bytes("spec"))
+          ethers.keccak256(ethers.toUtf8Bytes("spec")),
+          0
         );
         await escrow.connect(agent).acceptEscrow(0n);
         await escrow.connect(buyer).fundEscrow(0n);
@@ -432,7 +434,7 @@ describe("Assay Protocol", function () {
         expect(await escrow.nextEscrowId()).to.equal(0n);
 
         await expect(
-          escrow.connect(buyer).createEscrow(agent.address, USDC(50), deadline, spec)
+          escrow.connect(buyer).createEscrow(agent.address, USDC(50), deadline, spec, 0)
         )
           .to.emit(escrow, "EscrowCreated")
           .withArgs(0n, buyer.address, agent.address, USDC(50), deadline, spec);
@@ -443,28 +445,28 @@ describe("Assay Protocol", function () {
       it("(M-2) reverts SelfDeal when buyer == agent", async function () {
         const deadline = (await time.latest()) + THIRTY_DAYS;
         await expect(
-          escrow.connect(agent).createEscrow(agent.address, USDC(50), deadline, ethers.ZeroHash)
+          escrow.connect(agent).createEscrow(agent.address, USDC(50), deadline, ethers.ZeroHash, 0)
         ).to.be.revertedWithCustomError(escrow, "SelfDeal");
       });
 
       it("reverts ZeroAmount for amount == 0", async function () {
         const deadline = (await time.latest()) + THIRTY_DAYS;
         await expect(
-          escrow.connect(buyer).createEscrow(agent.address, 0n, deadline, ethers.ZeroHash)
+          escrow.connect(buyer).createEscrow(agent.address, 0n, deadline, ethers.ZeroHash, 0)
         ).to.be.revertedWithCustomError(escrow, "ZeroAmount");
       });
 
       it("reverts DeadlineInPast when deadline <= block.timestamp", async function () {
         const now = await time.latest();
         await expect(
-          escrow.connect(buyer).createEscrow(agent.address, USDC(50), now, ethers.ZeroHash)
+          escrow.connect(buyer).createEscrow(agent.address, USDC(50), now, ethers.ZeroHash, 0)
         ).to.be.revertedWithCustomError(escrow, "DeadlineInPast");
       });
 
       it("reverts AgentNotActive when agent is not registered", async function () {
         const deadline = (await time.latest()) + THIRTY_DAYS;
         await expect(
-          escrow.connect(buyer).createEscrow(stranger.address, USDC(50), deadline, ethers.ZeroHash)
+          escrow.connect(buyer).createEscrow(stranger.address, USDC(50), deadline, ethers.ZeroHash, 0)
         ).to.be.revertedWithCustomError(escrow, "AgentNotActive");
       });
     });
@@ -478,7 +480,8 @@ describe("Assay Protocol", function () {
         escrowId = await escrow.nextEscrowId();
         await escrow.connect(buyer).createEscrow(
           agent.address, USDC(50), deadline,
-          ethers.keccak256(ethers.toUtf8Bytes("spec"))
+          ethers.keccak256(ethers.toUtf8Bytes("spec")),
+          0
         );
         await escrow.connect(agent).acceptEscrow(escrowId);
       });
@@ -536,7 +539,8 @@ describe("Assay Protocol", function () {
         escrowId = await escrow.nextEscrowId();
         await escrow.connect(buyer).createEscrow(
           agent.address, USDC(50), deadline,
-          ethers.keccak256(ethers.toUtf8Bytes("spec"))
+          ethers.keccak256(ethers.toUtf8Bytes("spec")),
+          0
         );
         await escrow.connect(agent).acceptEscrow(escrowId);
         await escrow.connect(buyer).fundEscrow(escrowId);
@@ -576,7 +580,8 @@ describe("Assay Protocol", function () {
         escrowId = await escrow.nextEscrowId();
         await escrow.connect(buyer).createEscrow(
           agent.address, USDC(50), deadline,
-          ethers.keccak256(ethers.toUtf8Bytes("spec"))
+          ethers.keccak256(ethers.toUtf8Bytes("spec")),
+          0
         );
         await escrow.connect(agent).acceptEscrow(escrowId);
         await escrow.connect(buyer).fundEscrow(escrowId);
@@ -661,7 +666,8 @@ describe("Assay Protocol", function () {
         await escrow.connect(buyer).createEscrow(
           agent.address, USDC(50),
           (await time.latest()) + THIRTY_DAYS,
-          ethers.ZeroHash
+          ethers.ZeroHash,
+          0
         );
         await escrow.connect(agent).acceptEscrow(id2);
         await escrow.connect(buyer).fundEscrow(id2);
@@ -680,7 +686,8 @@ describe("Assay Protocol", function () {
         escrowId = await escrow.nextEscrowId();
         await escrow.connect(buyer).createEscrow(
           agent.address, USDC(50), deadline,
-          ethers.keccak256(ethers.toUtf8Bytes("spec"))
+          ethers.keccak256(ethers.toUtf8Bytes("spec")),
+          0
         );
       });
 
@@ -753,7 +760,8 @@ describe("Assay Protocol", function () {
         escrowId = await escrow.nextEscrowId();
         await escrow.connect(buyer).createEscrow(
           agent.address, USDC(50), deadline,
-          ethers.keccak256(ethers.toUtf8Bytes("spec"))
+          ethers.keccak256(ethers.toUtf8Bytes("spec")),
+          0
         );
         await escrow.connect(agent).acceptEscrow(escrowId);
         await escrow.connect(buyer).fundEscrow(escrowId);
@@ -1026,7 +1034,8 @@ describe("Assay Protocol", function () {
       const escrowId = await escrow.nextEscrowId();
       await escrow.connect(buyer).createEscrow(
         agent.address, amount, deadline,
-        ethers.keccak256(ethers.toUtf8Bytes("job-spec"))
+        ethers.keccak256(ethers.toUtf8Bytes("job-spec")),
+        0
       );
       expect((await escrow.getEscrow(escrowId)).status).to.equal(Status.Created);
 
@@ -1068,7 +1077,8 @@ describe("Assay Protocol", function () {
       await escrow.connect(buyer).createEscrow(
         agent.address, amount,
         (await time.latest()) + THIRTY_DAYS,
-        ethers.ZeroHash
+        ethers.ZeroHash,
+        0
       );
       await escrow.connect(agent).acceptEscrow(escrowId);
       await escrow.connect(buyer).fundEscrow(escrowId);
@@ -1095,7 +1105,8 @@ describe("Assay Protocol", function () {
       await escrow.connect(buyer).createEscrow(
         agent.address, USDC(50),
         (await time.latest()) + THIRTY_DAYS,
-        ethers.ZeroHash
+        ethers.ZeroHash,
+        0
       );
       await escrow.connect(agent).acceptEscrow(escrowId);
 
@@ -1118,7 +1129,8 @@ describe("Assay Protocol", function () {
         escrow.connect(agent).createEscrow(
           agent.address, USDC(50),
           (await time.latest()) + THIRTY_DAYS,
-          ethers.ZeroHash
+          ethers.ZeroHash,
+          0
         )
       ).to.be.revertedWithCustomError(escrow, "SelfDeal");
     });
@@ -1130,7 +1142,8 @@ describe("Assay Protocol", function () {
       await escrow.connect(buyer).createEscrow(
         agent.address, USDC(50),
         (await time.latest()) + THIRTY_DAYS,
-        ethers.ZeroHash
+        ethers.ZeroHash,
+        0
       );
       await escrow.connect(agent).acceptEscrow(escrowId);
 
@@ -1164,7 +1177,8 @@ describe("Assay Protocol", function () {
       await escrow.connect(buyer).createEscrow(
         agent.address, USDC(50),
         (await time.latest()) + THIRTY_DAYS,
-        ethers.ZeroHash
+        ethers.ZeroHash,
+        0
       );
       // Escrow remains Created (never funded)
       await time.increase(THIRTY_DAYS + 1);
@@ -1181,7 +1195,8 @@ describe("Assay Protocol", function () {
       await escrow.connect(buyer).createEscrow(
         agent.address, USDC(50),
         (await time.latest()) + THIRTY_DAYS,
-        ethers.ZeroHash
+        ethers.ZeroHash,
+        0
       );
       await escrow.connect(agent).acceptEscrow(escrowId);
       await escrow.connect(buyer).fundEscrow(escrowId);
@@ -1211,7 +1226,8 @@ describe("Assay Protocol", function () {
         await escrow.connect(buyer).createEscrow(
           agent.address, USDC(50),
           (await time.latest()) + THIRTY_DAYS,
-          ethers.keccak256(ethers.toUtf8Bytes(`spec-${i}`))
+          ethers.keccak256(ethers.toUtf8Bytes(`spec-${i}`)),
+          0
         );
         await escrow.connect(agent).acceptEscrow(escrowId);
         await escrow.connect(buyer).fundEscrow(escrowId);

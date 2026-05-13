@@ -13,7 +13,8 @@ const NETWORK_CONFIG = {
     minimumStake: 10_000_000n,
     stakeRegistry: "0x2589D201414A4658eFED96ea34841fBE31416bb8",
     reputation: "0x713F6aa4D833A1943fE55032ABc647c72501949E",
-    deprecatedEscrow: "0xC0Ce47838aCF7Dfb77ae3a6161B552604Ae8aaEe",
+    deprecatedEscrow: "0x797b3e1C41fcA5ee5CB56bA7E2454e4545C6D70F",
+    erc8004Reputation: "0x8004BAa17C55a88189AE136b182e5fdA19dE9b63",
   },
 };
 
@@ -112,6 +113,12 @@ async function main() {
   await (await escrowContract.authorizeVerifier(deployer.address)).wait();
   console.log(`  AssayEscrow.authorizeVerifier(${deployer.address})`);
 
+  if (config.erc8004Reputation) {
+    console.log("Setting ERC-8004 Reputation Registry...");
+    await (await escrowContract.setErc8004Reputation(config.erc8004Reputation)).wait();
+    console.log("  ERC-8004 ReputationRegistry set");
+  }
+
   if (deprecatedEscrowAddress) {
     await (await stakeRegistryContract.revokeEscrow(deprecatedEscrowAddress)).wait();
     console.log(`  StakeRegistry.revokeEscrow(${deprecatedEscrowAddress})`);
@@ -134,6 +141,12 @@ async function main() {
     () => escrowContract.isAuthorizedVerifier(deployer.address),
     "Escrow verifier authorization",
   );
+  const erc8004Configured = config.erc8004Reputation
+    ? await waitForCondition(
+      async () => (await escrowContract.erc8004Reputation()).toLowerCase() === config.erc8004Reputation.toLowerCase(),
+      "Escrow ERC-8004 reputation wiring",
+    )
+    : true;
   const deprecatedEscrowRevoked = deprecatedEscrowAddress
     ? await waitForCondition(
       async () => (await stakeRegistryContract.isAuthorizedEscrow(deprecatedEscrowAddress)) === false,
@@ -156,6 +169,9 @@ async function main() {
   if (!verifierAuthorized) {
     throw new Error("WIRING FAILED: Deployer not authorized as verifier in Escrow");
   }
+  if (!erc8004Configured) {
+    throw new Error("WIRING FAILED: ERC-8004 ReputationRegistry not configured in Escrow");
+  }
   if (!deprecatedEscrowRevoked) {
     throw new Error("WIRING FAILED: Deprecated escrow still authorized in StakeRegistry");
   }
@@ -166,6 +182,9 @@ async function main() {
   console.log(`  StakeRegistry.isAuthorizedEscrow(new) = ${escrowAuthorized}`);
   console.log(`  Reputation.isAuthorizedCaller(new)    = ${callerAuthorized}`);
   console.log(`  AssayEscrow.isAuthorizedVerifier(self) = ${verifierAuthorized}`);
+  if (config.erc8004Reputation) {
+    console.log(`  AssayEscrow.erc8004Reputation()       = ${config.erc8004Reputation}`);
+  }
   if (deprecatedEscrowAddress) {
     console.log(`  Deprecated escrow revoked everywhere  = ${deprecatedEscrowRevoked && deprecatedCallerRevoked}`);
   }
@@ -201,6 +220,7 @@ async function main() {
       AssayEscrow: escrowAddress,
       ...(deprecatedEscrowAddress ? { DeprecatedAssayEscrow: deprecatedEscrowAddress } : {}),
     },
+    ...(config.erc8004Reputation ? { externalContracts: { ERC8004ReputationRegistry: config.erc8004Reputation } } : {}),
   };
 
   const deploymentJsonPath = path.join(deploymentsDir, `${network}.json`);
@@ -228,6 +248,7 @@ async function main() {
     `| AssayReputation | \`${reputationAddress}\` |`,
     `| AssayEscrow | \`${escrowAddress}\` |`,
     ...(deprecatedEscrowAddress ? [`| AssayEscrow (deprecated) | \`${deprecatedEscrowAddress}\` |`] : []),
+    ...(config.erc8004Reputation ? [`| ERC8004ReputationRegistry | \`${config.erc8004Reputation}\` |`] : []),
     "",
     "## Wiring",
     "",
@@ -236,6 +257,7 @@ async function main() {
     "| StakeRegistry.isAuthorizedEscrow(AssayEscrow) | true |",
     "| Reputation.isAuthorizedCaller(AssayEscrow) | true |",
     "| AssayEscrow.isAuthorizedVerifier(deployer) | true |",
+    ...(config.erc8004Reputation ? ["| AssayEscrow.erc8004Reputation() == ERC8004ReputationRegistry | true |"] : []),
     ...(deprecatedEscrowAddress
       ? [
         "| StakeRegistry.isAuthorizedEscrow(deprecated) | false |",
@@ -257,6 +279,7 @@ async function main() {
     "## Notes",
     "",
     "- Treasury is currently set to the deployer address. Update it with setTreasury() if needed.",
+    ...(config.erc8004Reputation ? [`- ERC-8004 reputation feedback is configured to write into \`${config.erc8004Reputation}\`.`] : []),
     ...(config.usdc ? ["- Mainnet uses canonical Base USDC; no MockUSDC is deployed."] : ["- MockUSDC is for Base Sepolia testnet only."]),
   ];
 

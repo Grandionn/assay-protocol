@@ -8,6 +8,7 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "./interfaces/IAssayStakeRegistry.sol";
 import "./interfaces/IAssayReputation.sol";
 import "./interfaces/IAssayEscrow.sol";
+import "./interfaces/IERC8004ReputationRegistry.sol";
 
 /// @title AssayEscrow
 /// @notice Full escrow lifecycle for agent service transactions.
@@ -44,6 +45,7 @@ contract AssayEscrow is IAssayEscrow, Ownable, ReentrancyGuard {
     IERC20 public immutable usdc;
     IAssayStakeRegistry public immutable stakeRegistry;
     IAssayReputation    public immutable reputation;
+    IERC8004ReputationRegistry public erc8004Reputation;
 
     /// @notice Protocol fee recipient
     address public treasury;
@@ -64,6 +66,7 @@ contract AssayEscrow is IAssayEscrow, Ownable, ReentrancyGuard {
     }
 
     mapping(uint256 => Escrow)  private _escrows;
+    mapping(uint256 => uint256) public escrowErc8004AgentId;
     mapping(address => bool)    private _authorizedVerifiers;
 
     // ────────────────────────────────────────────────────────────────────────────
@@ -148,12 +151,14 @@ contract AssayEscrow is IAssayEscrow, Ownable, ReentrancyGuard {
     /// @param amount   USDC amount (6 decimals) to be paid on success
     /// @param deadline Unix timestamp by which the job must be settled
     /// @param specHash keccak256 of the off-chain service specification
+    /// @param erc8004AgentId Optional linked ERC-8004 agent token ID
     /// @return escrowId The new escrow identifier
     function createEscrow(
         address agent,
         uint256 amount,
         uint256 deadline,
-        bytes32 specHash
+        bytes32 specHash,
+        uint256 erc8004AgentId
     ) external returns (uint256 escrowId) {
         if (agent == msg.sender)               revert SelfDeal();
         if (amount == 0)                       revert ZeroAmount();
@@ -174,6 +179,10 @@ contract AssayEscrow is IAssayEscrow, Ownable, ReentrancyGuard {
             fundedAt:        0,
             submittedAt:     0
         });
+
+        if (erc8004AgentId > 0) {
+            escrowErc8004AgentId[escrowId] = erc8004AgentId;
+        }
 
         emit EscrowCreated(escrowId, msg.sender, agent, amount, deadline, specHash);
     }
@@ -319,6 +328,25 @@ contract AssayEscrow is IAssayEscrow, Ownable, ReentrancyGuard {
         ) {}
         catch { emit SideEffectFailed(escrowId, "recordOutcome"); }
 
+        uint256 linkedAgentId = escrowErc8004AgentId[escrowId];
+        if (linkedAgentId > 0 && address(erc8004Reputation) != address(0)) {
+            try reputation.getScore(escrow.agent) returns (uint256 score) {
+                try erc8004Reputation.submitFeedback(
+                    linkedAgentId,
+                    int128(int256(score)),
+                    0,
+                    keccak256("assay-score"),
+                    keccak256("escrow-settlement"),
+                    "",
+                    "",
+                    bytes32(0)
+                ) {}
+                catch { emit SideEffectFailed(escrowId, "erc8004Feedback"); }
+            } catch {
+                emit SideEffectFailed(escrowId, "erc8004Feedback");
+            }
+        }
+
         // Transfer funds — these must succeed; no try/catch
         usdc.safeTransfer(escrow.agent,  agentPayment);
         usdc.safeTransfer(treasury,      fee);
@@ -373,6 +401,10 @@ contract AssayEscrow is IAssayEscrow, Ownable, ReentrancyGuard {
         if (newTreasury == address(0)) revert ZeroAddress();
         emit TreasuryUpdated(treasury, newTreasury);
         treasury = newTreasury;
+    }
+
+    function setErc8004Reputation(address _erc8004Reputation) external onlyOwner {
+        erc8004Reputation = IERC8004ReputationRegistry(_erc8004Reputation);
     }
 
     // ────────────────────────────────────────────────────────────────────────────

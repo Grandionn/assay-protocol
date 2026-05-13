@@ -523,6 +523,11 @@
                            "internalType":  "bytes32",
                            "name":  "specHash",
                            "type":  "bytes32"
+                       },
+                       {
+                           "internalType":  "uint256",
+                           "name":  "erc8004AgentId",
+                           "type":  "uint256"
                        }
                    ],
         "name":  "createEscrow",
@@ -534,6 +539,40 @@
                         }
                     ],
         "stateMutability":  "nonpayable",
+        "type":  "function"
+    },
+    {
+        "inputs":  [
+
+                   ],
+        "name":  "erc8004Reputation",
+        "outputs":  [
+                        {
+                            "internalType":  "contract IERC8004ReputationRegistry",
+                            "name":  "",
+                            "type":  "address"
+                        }
+                    ],
+        "stateMutability":  "view",
+        "type":  "function"
+    },
+    {
+        "inputs":  [
+                       {
+                           "internalType":  "uint256",
+                           "name":  "",
+                           "type":  "uint256"
+                       }
+                   ],
+        "name":  "escrowErc8004AgentId",
+        "outputs":  [
+                        {
+                            "internalType":  "uint256",
+                            "name":  "",
+                            "type":  "uint256"
+                        }
+                    ],
+        "stateMutability":  "view",
         "type":  "function"
     },
     {
@@ -740,6 +779,21 @@
                        }
                    ],
         "name":  "revokeVerifier",
+        "outputs":  [
+
+                    ],
+        "stateMutability":  "nonpayable",
+        "type":  "function"
+    },
+    {
+        "inputs":  [
+                       {
+                           "internalType":  "address",
+                           "name":  "_erc8004Reputation",
+                           "type":  "address"
+                       }
+                   ],
+        "name":  "setErc8004Reputation",
         "outputs":  [
 
                     ],

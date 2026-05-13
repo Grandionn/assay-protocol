@@ -130,11 +130,21 @@ export async function registerAgent({ signer, agentAddress, capability, stakeAmo
   };
 }
 
-export async function createEscrowRequest({ signer, agentAddress, paymentAmount, specHash, deadlineTimestamp, onStatus, chainId = BASE_MAINNET_CHAIN_ID }) {
+export async function createEscrowRequest({
+  signer,
+  agentAddress,
+  paymentAmount,
+  specHash,
+  deadlineTimestamp,
+  erc8004AgentId,
+  onStatus,
+  chainId = BASE_MAINNET_CHAIN_ID,
+}) {
   const { escrow, stakeRegistry } = getContracts(signer, chainId);
   const paymentMicro = ethers.parseUnits(paymentAmount, 6);
   const buyerAddress = await signer.getAddress();
   const normalizedDeadline = BigInt(deadlineTimestamp);
+  const linkedErc8004Id = BigInt(erc8004AgentId || 0);
 
   if (!ethers.isAddress(agentAddress)) {
     throw new Error('Create escrow failed: the agent address is invalid.');
@@ -161,7 +171,13 @@ export async function createEscrowRequest({ signer, agentAddress, paymentAmount,
 
   let createReceipt;
   try {
-    const createTx = await escrow.createEscrow(agentAddress, paymentMicro, normalizedDeadline, specHash);
+    const createTx = await escrow.createEscrow(
+      agentAddress,
+      paymentMicro,
+      normalizedDeadline,
+      specHash,
+      linkedErc8004Id,
+    );
     createReceipt = await createTx.wait();
   } catch (error) {
     throw new Error(formatEscrowStepError('Create escrow', escrow, error));

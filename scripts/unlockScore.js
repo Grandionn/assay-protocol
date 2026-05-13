@@ -121,7 +121,7 @@ async function runEscrowFlow({
   const approveTx = await buyer.mockUsdc.approve(CONTRACT_ADDRESSES.escrow, amountMicro);
   const approveReceipt = await waitForReceipt(approveTx, `Approve ${amountLabel} for escrow`);
 
-  const createTx = await buyer.escrow.createEscrow(agent.address, amountMicro, deadline, specHash);
+  const createTx = await buyer.escrow.createEscrow(agent.address, amountMicro, deadline, specHash, 0);
   const createReceipt = await waitForReceipt(createTx, `Create escrow #${flowNumber}`);
   const escrowId = resolveEscrowId(createReceipt, escrow);
   console.log(`🆔 Escrow #${flowNumber} ID: ${escrowId.toString()}`);
@@ -138,6 +138,9 @@ async function runEscrowFlow({
     escrowId: escrowId.toString(),
     timestamp: createdTimestamp,
   });
+
+  const acceptTx = await agent.escrow.acceptEscrow(escrowId);
+  const acceptReceipt = await waitForReceipt(acceptTx, `Accept escrow #${flowNumber}`);
 
   const fundTx = await buyer.escrow.fundEscrow(escrowId);
   const fundReceipt = await waitForReceipt(fundTx, `Fund escrow #${flowNumber}`);
@@ -189,6 +192,7 @@ async function runEscrowFlow({
     settleHash: txHashOf(settleReceipt),
     approveHash: txHashOf(approveReceipt),
     createHash: txHashOf(createReceipt),
+    acceptHash: txHashOf(acceptReceipt),
     fundHash: txHashOf(fundReceipt),
     submitHash: txHashOf(submitReceipt),
   };
