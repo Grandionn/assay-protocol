@@ -6,6 +6,8 @@ coverage.json
 typechain-types/
 .env
 .env.local
+.cache/
+tmp/
 
 # Hardhat
 *.bak
