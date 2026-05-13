@@ -67,6 +67,10 @@ export function deriveStatus({ stake, active, registered }) {
 }
 
 export function isTestnetFallbackAgent(indexedAgent, onChainAgent) {
+  if (indexedAgent?.erc8004AgentId) {
+    return false;
+  }
+
   if (!indexedAgent) {
     return false;
   }
@@ -91,8 +95,9 @@ export function hydrateAgent(rawAgent, onChainAgent = {}, onChainStats = null) {
   const name = rawAgent?.name ?? deriveAgentName(address, capability);
   const tags = rawAgent?.tags ?? extractCapabilityTags(capability);
   const active = onChainAgent?.active ?? rawAgent?.active ?? false;
-  const registered = onChainAgent?.registered ?? Boolean(rawAgent?.registeredAt);
   const erc8004AgentId = rawAgent?.erc8004AgentId ?? null;
+  const isSyntheticErc8004Address = typeof address === 'string' && address.startsWith('erc8004-');
+  const registered = isSyntheticErc8004Address ? false : (onChainAgent?.registered ?? Boolean(rawAgent?.registeredAt));
   const erc8004Name = rawAgent?.erc8004Name ?? null;
   const erc8004Image = rawAgent?.erc8004Image ?? null;
   const erc8004Owner = rawAgent?.erc8004Owner ?? null;
@@ -129,7 +134,7 @@ export function hydrateAgent(rawAgent, onChainAgent = {}, onChainStats = null) {
     completionRate,
     avgSpeedMs,
     reliabilityStreak,
-    isTestnetAgent: Boolean(rawAgent?.isTestnetAgent),
+    isTestnetAgent: erc8004AgentId ? false : Boolean(rawAgent?.isTestnetAgent),
     shortAddress: truncateAddress(address),
     combinedScore: rawAgent?.combinedScore ?? 0,
     totalEarnings: onChainAgent?.earnings ?? rawAgent?.totalEarnings ?? 0,
