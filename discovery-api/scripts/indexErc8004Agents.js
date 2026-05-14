@@ -36,6 +36,7 @@ const FETCH_TIMEOUT_MS = 8_000;
 const INDEX_DELAY_MS = 300;
 const LOG_INTERVAL = 50;
 const CONSECUTIVE_FAILURE_LIMIT = 200;
+const BLOCKED_TERMS = ['porn', 'fuck', 'shit', 'ass', 'dick', 'sex', 'nude', 'xxx', 'hentai', 'cock', 'pussy'];
 
 const ABI = [
   'function totalSupply() view returns (uint256)',
@@ -96,6 +97,20 @@ function resolveUri(uri) {
 
 function hasRealName(name) {
   return typeof name === 'string' && name.trim().length > 0;
+}
+
+function containsBlockedContent(name, description) {
+  const haystack = `${name ?? ''} ${description ?? ''}`.toLowerCase();
+  return BLOCKED_TERMS.some((term) => haystack.includes(term));
+}
+
+function isWalletLikeName(name) {
+  const normalizedName = typeof name === 'string' ? name.trim() : '';
+  return normalizedName.startsWith('0x') && normalizedName.length > 20;
+}
+
+function isAsciiPrintable(value) {
+  return /^[\x20-\x7E]+$/.test(value);
 }
 
 async function fetchAgentCard(contract, tokenId) {
@@ -231,6 +246,37 @@ async function main() {
         const addressKey = `erc8004-${numericTokenId}`;
         const name = card.name.trim();
         const description = card.description || 'ERC-8004 registered agent on Base';
+
+        if (containsBlockedContent(name, description)) {
+          skipped += 1;
+          console.warn(`[erc8004-index] Skipping token ${numericTokenId}: blocked content detected.`);
+          if (processed % LOG_INTERVAL === 0) {
+            console.log(`Indexed ${processed}/${maxCount} (${failed} failed, ${skipped} skipped)...`);
+          }
+          await delay(INDEX_DELAY_MS);
+          continue;
+        }
+
+        if (isWalletLikeName(name)) {
+          skipped += 1;
+          console.warn(`[erc8004-index] Skipping token ${numericTokenId}: name looks like a wallet address.`);
+          if (processed % LOG_INTERVAL === 0) {
+            console.log(`Indexed ${processed}/${maxCount} (${failed} failed, ${skipped} skipped)...`);
+          }
+          await delay(INDEX_DELAY_MS);
+          continue;
+        }
+
+        if (!isAsciiPrintable(name)) {
+          skipped += 1;
+          console.warn(`[erc8004-index] Skipping token ${numericTokenId}: name contains non-ASCII characters.`);
+          if (processed % LOG_INTERVAL === 0) {
+            console.log(`Indexed ${processed}/${maxCount} (${failed} failed, ${skipped} skipped)...`);
+          }
+          await delay(INDEX_DELAY_MS);
+          continue;
+        }
+
         const image = card.image || null;
         const capability = description;
         const embedding = await getEmbedding(`${name} ${capability}`);

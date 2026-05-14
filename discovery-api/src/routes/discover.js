@@ -39,7 +39,7 @@ router.post('/', async (req, res) => {
   }
 
   if (!normalizedQuery) {
-    const results = store.list().slice().sort(sortByTrust).map(mapUnscoredResult);
+    const results = store.list().slice().sort(sortByTrust).slice(0, topK).map(mapUnscoredResult);
 
     return res.json({
       query: '',
