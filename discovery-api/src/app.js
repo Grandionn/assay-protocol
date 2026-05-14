@@ -28,8 +28,7 @@ app.use(express.json());
 app.use(generalLimiter);
 
 app.get('/health', (_req, res) => {
-  const { size } = require('./vectorStore');
-  res.json({ status: 'ok', agentsIndexed: size() });
+  res.status(200).json({ status: 'ok', timestamp: Date.now() });
 });
 
 app.use('/agents', agentsRouter);

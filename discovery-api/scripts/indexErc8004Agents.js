@@ -94,6 +94,10 @@ function resolveUri(uri) {
   return uri;
 }
 
+function hasRealName(name) {
+  return typeof name === 'string' && name.trim().length > 0;
+}
+
 async function fetchAgentCard(contract, tokenId) {
   let owner;
   try {
@@ -212,9 +216,20 @@ async function main() {
       const card = await fetchAgentCard(contract, tokenId);
       if (!card) {
         skipped += 1;
+        console.warn(`[erc8004-index] Skipping token ${numericTokenId}: metadata could not be resolved.`);
       } else {
+        if (!hasRealName(card.name)) {
+          skipped += 1;
+          console.warn(`[erc8004-index] Skipping token ${numericTokenId}: metadata has no real name.`);
+          if (processed % LOG_INTERVAL === 0) {
+            console.log(`Indexed ${processed}/${maxCount} (${failed} failed, ${skipped} skipped)...`);
+          }
+          await delay(INDEX_DELAY_MS);
+          continue;
+        }
+
         const addressKey = `erc8004-${numericTokenId}`;
-        const name = card.name || `ERC-8004 Agent #${numericTokenId}`;
+        const name = card.name.trim();
         const description = card.description || 'ERC-8004 registered agent on Base';
         const image = card.image || null;
         const capability = description;
@@ -242,7 +257,7 @@ async function main() {
     }
 
     if (processed % LOG_INTERVAL === 0) {
-      console.log(`Indexed ${processed}/${maxCount} (${failed} failed)...`);
+      console.log(`Indexed ${processed}/${maxCount} (${failed} failed, ${skipped} skipped)...`);
     }
 
     await delay(INDEX_DELAY_MS);
