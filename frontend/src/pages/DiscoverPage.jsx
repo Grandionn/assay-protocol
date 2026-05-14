@@ -61,7 +61,7 @@ export function DiscoverPage() {
     setIsLoadingResults(true);
 
     try {
-      const payload = await discoverAgents('agent');
+      const payload = await discoverAgents('');
       const hydratedResults = await hydrateDiscoverResults(payload.results);
       if (!ignore) {
         setResults(hydratedResults);

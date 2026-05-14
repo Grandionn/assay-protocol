@@ -32,6 +32,8 @@ export function AgentCard({ agent }) {
   const Icon = resolveIcon(agent.tags);
   const scorePercent = Math.max(0, Math.min(agent.assayScore / 10000, 1)) * 100;
   const completionRateLabel = agent.completionRate == null ? 'N/A' : formatPercent(agent.completionRate);
+  const displayName = agent.name.length > 40 ? `${agent.name.slice(0, 40)}...` : agent.name;
+  const showMatchBadge = agent.similarity != null && agent.similarity > 0;
 
   return (
     <article className="panel group flex h-full flex-col rounded-3xl p-6 transition duration-300 hover:-translate-y-1 hover:border-primary/22">
@@ -46,9 +48,11 @@ export function AgentCard({ agent }) {
               Testnet Agent
             </div>
           ) : null}
-          <div className="rounded-full border border-primary/15 bg-primary/8 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.28em] text-primary">
-            Match {Math.round(agent.combinedScore * 100)}%
-          </div>
+          {showMatchBadge ? (
+            <div className="rounded-full border border-primary/15 bg-primary/8 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.28em] text-primary">
+              Match {Math.round(agent.combinedScore * 100)}%
+            </div>
+          ) : null}
           {agent.erc8004AgentId != null ? (
             <a
               href={`https://basescan.org/token/0x8004A169FB4a3325136EB29fA0ceB6D2e539a432?a=${agent.erc8004AgentId}`}
@@ -67,7 +71,7 @@ export function AgentCard({ agent }) {
         <div>
           <div className="flex items-start justify-between gap-4">
             <div>
-              <h3 className="font-display text-2xl font-bold tracking-[-0.08em] text-text">{agent.name}</h3>
+              <h3 className="font-display text-2xl font-bold tracking-[-0.08em] text-text">{displayName}</h3>
               <p className="mt-2 line-clamp-3 text-sm leading-6 text-slate-300/82">{agent.capability}</p>
             </div>
             <BadgeCheck className="mt-1 shrink-0 text-primary" size={18} />

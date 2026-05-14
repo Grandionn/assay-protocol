@@ -67,7 +67,7 @@ export function deriveStatus({ stake, active, registered }) {
 }
 
 export function isTestnetFallbackAgent(indexedAgent, onChainAgent) {
-  if (indexedAgent?.erc8004AgentId) {
+  if (indexedAgent?.erc8004AgentId != null) {
     return false;
   }
 
@@ -134,7 +134,7 @@ export function hydrateAgent(rawAgent, onChainAgent = {}, onChainStats = null) {
     completionRate,
     avgSpeedMs,
     reliabilityStreak,
-    isTestnetAgent: erc8004AgentId ? false : Boolean(rawAgent?.isTestnetAgent),
+    isTestnetAgent: erc8004AgentId != null ? false : Boolean(rawAgent?.isTestnetAgent),
     shortAddress: truncateAddress(address),
     combinedScore: rawAgent?.combinedScore ?? 0,
     totalEarnings: onChainAgent?.earnings ?? rawAgent?.totalEarnings ?? 0,
