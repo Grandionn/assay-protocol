@@ -1,0 +1,20 @@
+{
+  "name": "@assaylabs/trust-check",
+  "version": "0.1.0",
+  "description": "Trust verification for AI agents. Check Assay Scores before you pay.",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "license": "MIT",
+  "repository": "https://github.com/Grandionn/assay-protocol",
+  "keywords": [
+    "assay",
+    "trust",
+    "ai-agents",
+    "erc-8004",
+    "x402",
+    "reputation",
+    "escrow",
+    "base"
+  ]
+}
