@@ -55,6 +55,9 @@ export function Navbar() {
             <NavLink to="/register" className={navLinkClassName}>
               Register Agent
             </NavLink>
+            <NavLink to="/compare" className={navLinkClassName}>
+              Resources
+            </NavLink>
           </div>
         </div>
 
@@ -110,6 +113,9 @@ export function Navbar() {
           </NavLink>
           <NavLink to="/escrows" className={mobileNavLinkClassName} onClick={() => setIsMobileMenuOpen(false)}>
             My Escrows
+          </NavLink>
+          <NavLink to="/compare" className={mobileNavLinkClassName} onClick={() => setIsMobileMenuOpen(false)}>
+            Resources
           </NavLink>
           {isRegisteredAgent ? (
             <NavLink to={`/agent/${address}`} className={mobileNavLinkClassName} onClick={() => setIsMobileMenuOpen(false)}>

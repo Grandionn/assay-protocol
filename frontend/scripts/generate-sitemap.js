@@ -11,7 +11,15 @@ const sitemapPath = path.resolve(publicDir, 'sitemap.xml');
 
 const SITE_ORIGIN = 'https://assaylabs.xyz';
 const API_FALLBACK_URL = 'https://assay-discovery-api.onrender.com';
-const STATIC_PATHS = ['/', '/discover', '/register'];
+const STATIC_PATHS = [
+  '/',
+  '/discover',
+  '/register',
+  '/blog',
+  '/compare',
+  '/compare/assay-vs-verity',
+  '/compare/assay-vs-mnemom',
+];
 const TODAY = new Date().toISOString().split('T')[0];
 
 function normalizeBaseUrl(value) {

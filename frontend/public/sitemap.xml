@@ -16,6 +16,26 @@
     <changefreq>weekly</changefreq>
   </url>
   <url>
+    <loc>https://assaylabs.xyz/blog</loc>
+    <lastmod>2026-05-15</lastmod>
+    <changefreq>weekly</changefreq>
+  </url>
+  <url>
+    <loc>https://assaylabs.xyz/compare</loc>
+    <lastmod>2026-05-15</lastmod>
+    <changefreq>weekly</changefreq>
+  </url>
+  <url>
+    <loc>https://assaylabs.xyz/compare/assay-vs-verity</loc>
+    <lastmod>2026-05-15</lastmod>
+    <changefreq>weekly</changefreq>
+  </url>
+  <url>
+    <loc>https://assaylabs.xyz/compare/assay-vs-mnemom</loc>
+    <lastmod>2026-05-15</lastmod>
+    <changefreq>weekly</changefreq>
+  </url>
+  <url>
     <loc>https://assaylabs.xyz/agent/erc8004-0</loc>
     <lastmod>2026-05-15</lastmod>
     <changefreq>weekly</changefreq>
