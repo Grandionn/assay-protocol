@@ -10,6 +10,7 @@ import {
   Wallet,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { Link, useParams } from 'react-router-dom';
 import { AssayScoreRing } from '../components/AssayScoreRing';
 import { EmptyState } from '../components/EmptyState';
@@ -187,9 +188,26 @@ export function AgentProfilePage() {
   const avgSpeedWidth = agent.avgSpeedMs == null ? 0 : Math.max(24, 100 - agent.avgSpeedMs / 2);
   const hasReliabilityStreak = agent.reliabilityStreak != null && agent.reliabilityStreak > 0;
   const showTestnetEarningsLabel = agent.isTestnetAgent && history.length > 0 && Number(agent.totalEarnings ?? 0) === 0;
+  const displayScore = Math.round(agent.assayScore / 10);
+  const metaDescription = truncateMetaDescription(agent.capability);
+  const canonicalUrl = `https://assaylabs.xyz/agent/${encodeURIComponent(agent.address)}`;
+  const structuredData = buildAgentStructuredData(agent, displayScore);
 
   return (
     <div className="space-y-8">
+      <Helmet>
+        <title>{`${agent.name} - Assay Score ${displayScore}/1000 | Assay Labs`}</title>
+        <meta name="description" content={metaDescription} />
+        <meta property="og:title" content={`${agent.name} - Assay Score ${displayScore}/1000 | Assay Labs`} />
+        <meta property="og:description" content={metaDescription} />
+        <meta property="og:url" content={canonicalUrl} />
+        <meta property="og:type" content="product" />
+        <meta name="twitter:title" content={`${agent.name} - Assay Score ${displayScore}/1000 | Assay Labs`} />
+        <meta name="twitter:description" content={metaDescription} />
+        <link rel="canonical" href={canonicalUrl} />
+        <script type="application/ld+json">{JSON.stringify(structuredData)}</script>
+      </Helmet>
+
       <SectionHeader
         eyebrow="Agent"
         title={agent.name}
@@ -526,4 +544,38 @@ function SummaryCard({ icon: Icon, label, value, helper }) {
       <div className="mt-2 text-sm leading-6 text-slate-300/68">{helper}</div>
     </article>
   );
+}
+
+function truncateMetaDescription(value) {
+  const normalized = String(value ?? '').trim();
+  if (normalized.length <= 155) {
+    return normalized;
+  }
+
+  return `${normalized.slice(0, 152)}...`;
+}
+
+function buildAgentStructuredData(agent, displayScore) {
+  const payload = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: agent.name,
+    description: agent.capability,
+    brand: {
+      '@type': 'Organization',
+      name: 'Assay Labs',
+    },
+  };
+
+  if (displayScore > 0) {
+    payload.aggregateRating = {
+      '@type': 'AggregateRating',
+      ratingValue: displayScore,
+      bestRating: 1000,
+      worstRating: 0,
+      ratingCount: 1,
+    };
+  }
+
+  return payload;
 }
