@@ -2,6 +2,7 @@ const cors = require('cors');
 const express = require('express');
 const rateLimit = require('express-rate-limit');
 const agentsRouter = require('./routes/agents');
+const badgeRouter = require('./routes/badge');
 const discoverRouter = require('./routes/discover');
 const transactionsRouter = require('./routes/transactions');
 
@@ -31,6 +32,7 @@ app.get('/health', (_req, res) => {
   res.status(200).json({ status: 'ok', timestamp: Date.now() });
 });
 
+app.use('/badge', badgeRouter);
 app.use('/agents', agentsRouter);
 app.use('/discover', searchLimiter);
 app.use('/discover', discoverRouter);

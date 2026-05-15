@@ -321,6 +321,12 @@ export function AgentProfilePage() {
               <div className="mt-4 font-display text-5xl font-bold tracking-[-0.1em] text-primary">
                 {Math.round(agent.assayScore / 10).toLocaleString()}
               </div>
+              <Link
+                to={`/badge?address=${encodeURIComponent(agent.address)}`}
+                className="mt-3 inline-flex text-sm font-semibold text-primary transition hover:text-sky-200"
+              >
+                Embed this badge
+              </Link>
               <div className="mt-3 max-w-xs text-sm leading-7 text-slate-300/74">
                 {agent.assayScore === 0 && agentStats
                   ? agentStats.totalJobs === 0

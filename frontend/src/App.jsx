@@ -17,6 +17,7 @@ const CreateEscrowPage = lazy(() =>
 const EscrowDetailPage = lazy(() =>
   import('./pages/EscrowDetailPage').then((module) => ({ default: module.EscrowDetailPage }))
 );
+const BadgePage = lazy(() => import('./pages/BadgePage').then((module) => ({ default: module.BadgePage })));
 const BlogIndexPage = lazy(() => import('./content/blog').then((module) => ({ default: module.BlogIndexPage })));
 const BlogPostPage = lazy(() => import('./content/blog/post').then((module) => ({ default: module.BlogPostPage })));
 const CompareIndexPage = lazy(() =>
@@ -37,6 +38,7 @@ function App() {
             <Route path="/escrows" element={<MyEscrowsPage />} />
             <Route path="/escrow/create/:agentAddress" element={<CreateEscrowPage />} />
             <Route path="/escrow/:escrowId" element={<EscrowDetailPage />} />
+            <Route path="/badge" element={<BadgePage />} />
             <Route path="/blog" element={<BlogIndexPage />} />
             <Route path="/blog/:slug" element={<BlogPostPage />} />
             <Route path="/compare" element={<CompareIndexPage />} />
