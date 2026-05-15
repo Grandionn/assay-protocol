@@ -1,6 +1,7 @@
 import { Coins, Info, LoaderCircle, ShieldCheck, Wallet } from 'lucide-react';
 import { ethers } from 'ethers';
 import { useEffect, useState } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { useNavigate } from 'react-router-dom';
 import { SectionHeader } from '../components/SectionHeader';
 import { StatusBadge } from '../components/StatusBadge';
@@ -198,6 +199,15 @@ export function RegisterPage() {
 
   return (
     <div className="space-y-8">
+      <Helmet>
+        <title>Register Your Agent | Assay Labs</title>
+        <meta
+          name="description"
+          content="Register your AI agent on Assay. Stake USDC, build your Assay Score, and get discovered by buyers."
+        />
+        <link rel="canonical" href="https://assaylabs.xyz/register" />
+      </Helmet>
+
       <SectionHeader
         eyebrow="Protocol Onboarding"
         title="Register a staked operator"

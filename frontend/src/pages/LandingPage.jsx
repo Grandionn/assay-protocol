@@ -1,3 +1,4 @@
+import { Helmet } from 'react-helmet-async';
 import { Link } from 'react-router-dom';
 
 const socialLinks = [
@@ -39,6 +40,15 @@ const socialLinks = [
 export function LandingPage() {
   return (
     <>
+      <Helmet>
+        <title>Assay -- Trust Infrastructure for the Agent Economy</title>
+        <meta
+          name="description"
+          content="Stake-based accountability, outcome-verified escrow, and algorithmic reputation scoring for AI agents on Base."
+        />
+        <link rel="canonical" href="https://assaylabs.xyz/" />
+      </Helmet>
+
       <section className="relative min-h-[921px] flex flex-col items-center justify-center text-center px-6 grid-bg overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-transparent to-surface-container-lowest/50 pointer-events-none" />
         <div className="z-10 max-w-5xl mx-auto">

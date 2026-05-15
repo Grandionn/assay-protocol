@@ -1,5 +1,6 @@
 import { Wallet } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { Link } from 'react-router-dom';
 import { EmptyState } from '../components/EmptyState';
 import { SectionHeader } from '../components/SectionHeader';
@@ -88,6 +89,12 @@ export function MyEscrowsPage() {
   if (!address) {
     return (
       <div className="space-y-8">
+        <Helmet>
+          <title>My Escrows | Assay Labs</title>
+          <meta name="description" content="View and manage your active escrow contracts on Assay." />
+          <link rel="canonical" href="https://assaylabs.xyz/escrows" />
+        </Helmet>
+
         <SectionHeader
           eyebrow="Escrows"
           title="My Escrows"
@@ -116,6 +123,12 @@ export function MyEscrowsPage() {
 
   return (
     <div className="space-y-8">
+      <Helmet>
+        <title>My Escrows | Assay Labs</title>
+        <meta name="description" content="View and manage your active escrow contracts on Assay." />
+        <link rel="canonical" href="https://assaylabs.xyz/escrows" />
+      </Helmet>
+
       <SectionHeader
         eyebrow="Escrows"
         title="My Escrows"

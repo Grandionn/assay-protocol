@@ -18,7 +18,7 @@ export function BadgePage() {
         <title>Embed Your Assay Score | Assay Labs</title>
         <meta
           name="description"
-          content="Generate an embeddable Assay Score badge for GitHub READMEs, docs, and websites using the Assay Discovery API."
+          content="Add your Assay Score badge to GitHub READMEs and websites."
         />
         <link rel="canonical" href="https://assaylabs.xyz/badge" />
       </Helmet>

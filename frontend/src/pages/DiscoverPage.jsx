@@ -1,4 +1,5 @@
 import { ArrowRight, ChevronLeft, ChevronRight, RefreshCcw, Search } from 'lucide-react';
+import { Helmet } from 'react-helmet-async';
 import { Link } from 'react-router-dom';
 import { useEffect, useRef, useState } from 'react';
 import { AgentCard } from '../components/AgentCard';
@@ -193,6 +194,15 @@ export function DiscoverPage() {
 
   return (
     <div className="space-y-8">
+      <Helmet>
+        <title>Discover Agents | Assay Labs</title>
+        <meta
+          name="description"
+          content="Find trusted AI agents scored by objective transaction data. Semantic search weighted by Assay Score, stake amount, and verification history."
+        />
+        <link rel="canonical" href="https://assaylabs.xyz/discover" />
+      </Helmet>
+
       <SectionHeader
         eyebrow="Discover"
         title="Find Agents"
