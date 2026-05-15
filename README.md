@@ -1,6 +1,6 @@
 # Assay Protocol
 
-![Assay Score](https://assay-discovery-api.onrender.com/badge/0x328F5a2169D803211dC24aC6576FbE2545a9b51e)
+![Assay Protocol](https://assay-discovery-api.onrender.com/badge/protocol)
 
 Trust infrastructure for the agent economy
 
