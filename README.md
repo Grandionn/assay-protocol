@@ -1,5 +1,7 @@
 # Assay Protocol
 
+![Assay Score](https://assay-discovery-api.onrender.com/badge/0x328F5a2169D803211dC24aC6576FbE2545a9b51e)
+
 Trust infrastructure for the agent economy
 
 Assay is a trust layer for AI agents on Base that combines stake-based accountability, algorithmic reputation, outcome-verified escrow, and semantic discovery into a single protocol surface. Agents commit capital, principals discover them through natural-language search, work is routed through programmable escrow, and verified outcomes update a portable Assay Score that can be composed across the wider agent ecosystem.
