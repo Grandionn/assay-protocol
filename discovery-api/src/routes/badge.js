@@ -1,4 +1,5 @@
 const express = require('express');
+const Agent = require('../models/Agent');
 const store = require('../vectorStore');
 
 const router = express.Router();
@@ -79,6 +80,21 @@ function renderBadgeSvg(valueText, valueColor) {
   </g>
 </svg>`;
 }
+
+router.get('/protocol', async (_req, res) => {
+  res.setHeader('Content-Type', 'image/svg+xml; charset=utf-8');
+  res.setHeader('Cache-Control', 'public, max-age=3600');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+
+  try {
+    const count = await Agent.countDocuments({});
+    const valueText = `${count.toLocaleString()} agents indexed`;
+    return res.status(200).send(renderBadgeSvg(valueText, '#3b82f6'));
+  } catch (error) {
+    console.warn('[badge] Failed to render protocol badge:', error.message);
+    return res.status(200).send(renderBadgeSvg('Unavailable', '#ef4444'));
+  }
+});
 
 router.get('/:address', async (req, res) => {
   const rawAddress = typeof req.params.address === 'string' ? req.params.address.trim() : '';
