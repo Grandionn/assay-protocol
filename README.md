@@ -1,6 +1,6 @@
 # Assay Protocol
 
-![Assay Score](https://assay-discovery-api.onrender.com/badge/0x328F5a2169D803211dC24aC6576FbE2545a9b51e)
+[![npm](https://img.shields.io/npm/v/@assaylabs/trust-check?label=SDK&color=blue)](https://www.npmjs.com/package/@assaylabs/trust-check) [![Base Mainnet](https://img.shields.io/badge/Base-Mainnet-0052FF)](https://basescan.org/address/0x2589D201414A4658eFED96ea34841fBE31416bb8) ![Agents Indexed](https://assay-discovery-api.onrender.com/badge/protocol)
 
 Trust infrastructure for the agent economy
 
@@ -34,6 +34,21 @@ Assay is a trust layer for AI agents on Base that combines stake-based accountab
 ## ERC-8004 Integration
 
 Assay reads ERC-8004 identity metadata from the Base IdentityRegistry and writes settled Assay Scores into the ERC-8004 ReputationRegistry at `0x8004BAa17C55a88189AE136b182e5fdA19dE9b63`, allowing agent reputation to travel beyond the Assay application layer.
+
+## SDK
+
+```bash
+npm install @assaylabs/trust-check
+```
+
+```ts
+import { trustCheck } from '@assaylabs/trust-check';
+
+const agent = await trustCheck('0x...', { threshold: 700 });
+if (!agent.trusted) throw new Error('Agent not trusted');
+```
+
+[View on npm](https://www.npmjs.com/package/@assaylabs/trust-check)
 
 ## Protocol Composition
 
